@@ -27,7 +27,7 @@ Use Case :
     As a Developer I want to be able to import json files and create a class hierarchy so that my development is easier
 
 Testable Statements :
-    Can I import a json file
+    Can I import a json fil
     Is a module created
     Can the module be correctly reloaded
     Are module level attributes supported
