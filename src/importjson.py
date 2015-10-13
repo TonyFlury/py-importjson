@@ -27,7 +27,7 @@ Use Case :
     As a Developer I want to be able to import json files and create a class hierarchy so that my development is easier
 
 Testable Statements :
-    Can I import a json fil
+    Can I import a json file
     Is a module created
     Can the module be correctly reloaded
     Are module level attributes supported
@@ -92,16 +92,20 @@ class JSONLoader(object):
         mc = ""
         ignore = ["__doc__", "__class_attributes__"]
         """Generate code for class definition"""
+
         if not isinstance(data_dict, dict):
             raise ImportError("Expecting dictionary for instance attributes")
 
-        ci = ""
-        al = ", ".join(
+        al = [
             "{}={}".format(var, repr(value) if not isinstance(value, (list, dict)) else "None")
-            for var, value in data_dict.iteritems() if var not in ignore)
+            for var, value in data_dict.iteritems() if var not in ignore ]
 
-        ci += "\n    def __init__(self, {}):\n".format(al)
-        ci += "".join("        self._{} = {}\n".format(var,
+        if not al:
+            mc += "    pass"
+            return mc
+
+        mc += "\n    def __init__(self, {}):\n".format(",".join(al))
+        mc += "".join("        self._{} = {}\n".format(var,
                       var if not isinstance(default_value, (list, dict)) else
                       "{} if {} is None else {}".format(repr(default_value), var, var))
                       for var, default_value in data_dict.iteritems() if var not in ignore
@@ -131,9 +135,9 @@ class JSONLoader(object):
         cls_def = ""
 
         # Class definition
-        cls_def += "\n\nclass {} ({}):\n".format(cls_name, working_copy.get("parent", "object"))
-        if "parent" in working_copy:
-            del working_copy["parent"]
+        cls_def += "\n\nclass {} ({}):\n".format(cls_name, working_copy.get("__parent__", "object"))
+        if "__parent__" in working_copy:
+            del working_copy["__parent__"]
 
         # Documentation string - special case item
         cls_def += '    """{}"""\n'.format(working_copy["__doc__"]) if "__doc__" in working_copy else ""
@@ -184,7 +188,11 @@ class JSONLoader(object):
             raise ImportError("Mismatching Loaders")
 
         mod_code = ""
-        mod_code += '"""Module {} - Created by {} \n' \
+
+        if "__doc__" in self._dict:
+            mod_code += '"""{}"""'.format(self._dict["__doc__"].encode("utf-8"))
+        else:
+            mod_code += '"""Module {} - Created by {} \n' \
                     '   Original json data : {}\n' \
                     '   Generated {} {}"""\n'.format(mod_name,
                                                      self.__class__.__name__,
@@ -198,8 +206,12 @@ class JSONLoader(object):
                 if isinstance(self._dict[key], dict):
                     mod_code += self._create_classes(self._dict[key])
                 else:
-                    raise ImportError("Unable to Import : classes must be json dictionaries")
+                    raise ImportError("Unable to Import : classes must be defined as json dictionaries")
             else:
+                # Ignore the __doc__ key - as it has already been consumed
+                if key == "__doc__":
+                    continue
+
                 # Everything else is treated module level attribute
                 mod_code += "{} = {}\n".format(key, repr(self._dict[key]))
 
@@ -209,12 +221,14 @@ class JSONLoader(object):
 
         if fullname in sys.modules:
             mod = sys.modules[fullname]
+            mod.__name__ = fullname
         else:
             mod = imp.new_module(fullname)
-            mod.__file__ = self._jsonpath
-            mod.__loader__ = self
-            mod.__package__ = None
-            sys.modules[fullname] = mod
+
+        mod.__file__ = self._jsonpath
+        mod.__loader__ = self
+        mod.__package__ = None
+        sys.modules[fullname] = mod
 
         try:
             self._mod = mod
@@ -225,13 +239,15 @@ class JSONLoader(object):
                 raise ImportError("Unable to import : Top Level of Json file must be a dictionary")
 
             mod_code = self.get_source(self._mod_name)
+
             exec mod_code in mod.__dict__       # Compile the code into the modules
             mod.__json__ = self._dict           # Special module level attribute - the loaded json
 #            mod.__source__ = mod_code
 
         except BaseException as e:
             del sys.modules[fullname]
-            raise ImportError("Error Importing {} : {}".format(fullname, e))
+            import traceback
+            raise ImportError("Error Importing {} : {}".format(fullname, traceback.format_exc()))
 
         return mod
 
