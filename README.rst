@@ -36,7 +36,6 @@ and to populate instances of your classes.
 With the `importjson` library you can import this json directly into your application, and create the classes with 2
 lines as demonstrated here in the console
 
-::
 .. code-block:: python
 
     >>> import importjson # Importjson library - must be imported before any json files
@@ -44,7 +43,6 @@ lines as demonstrated here in the console
 
 The contents of the ''classes.json'' file have now been translated into module attributes and classes, which can be used just as any other module or class. All the values defined in the json file have been translated into module attributes, classes, class attributes, or data attributes as appropriate (see Details section below for the expected json structure):
 
-::
 .. code-block:: python
 
     >>> # Module attributes
