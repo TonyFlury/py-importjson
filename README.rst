@@ -1,5 +1,5 @@
 importjson : Import json data into a python application
--------------------------------------------------------
+=======================================================
 
 It is sometimes useful to be able to use json data to initialise classes and other data structures, giving
 your application a portable and human readable configuration capability. To do this you will probably write some level of
@@ -14,7 +14,7 @@ instance data attributes (implemented with set and get descriptors). These class
 python module - just as if you had written the code yourself.
 
 Example
-------
+-------
 The json file called classes.json exists in your applications current directory
 
     {
@@ -107,7 +107,7 @@ Instance Data attributes can be changed using the normal dot syntax :
 
 
 Details
--------
+=======
 
 The json file must be in a specific format :
 
