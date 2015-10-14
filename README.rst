@@ -1,22 +1,17 @@
 importjson : Import json data into a python application
 =======================================================
 
-It is sometimes useful to be able to use json data to initialise classes and other data structures, giving
-your application a portable and human readable configuration capability. To do this you will probably write some level of
-functionality around the json standard library, and use the resulting data loaded from the json file, to populate
-classes and instances implemented in your application. This separates your data and functionality, which can often
-present challenges later down the line as you need to keep the data and functionality in step.
+It is sometimes useful to be able to use json data to initialise classes and other data structures, giving your application a portable and human readable configuration capability. To do this you will probably write some level of functionality around the json standard library, and use the resulting data loaded from the json file, to populate classes and instances implemented in your application. This separates your data and functionality, which can often present challenges later down the line as you need to keep the data and functionality in step.
 
-It would be better in many cases to be able to combine the data and functionality in a single place, and with the
-importjson library you can do that. The library allows you to import a json file direct into your python application.
-The library uses the json data to construct a set of classes, complete with class attributes, and
-instance data attributes (implemented with set and get descriptors). These classes are presented as a fully formed
-python module - just as if you had written the code yourself.
+It would be better in many cases to be able to combine the data and functionality in a single place, and with the importjson library you can do that. The library allows you to import a json file direct into your python application.
+The library uses the json data to construct a set of classes, complete with class attributes, and instance data attributes (implemented with set and get descriptors). These classes are presented as a fully formed python module - just as if you had written the code yourself.
 
 Example
 -------
 The json file called classes.json exists in your applications current directory
 
+::
+.. code:: json
     {
         "__version__":"0.1",
         "__author__":"Tony",
@@ -38,17 +33,18 @@ Even with the json standard library only, it might take 10 lines or so to bring 
 and to populate instances of your classes.
 
 With the `importjson` library you can import this json directly into your application, and create the classes with 2
-lines as demonstrated here in the console :
+lines as demonstrated here in the console
 
-    $ python
-    Type "help", "copyright", "credits" or "license" for more information.
+::
+.. code:: python
 
-    >>> import importjson       # Importjson library - must be imported before any json files
+    >>> import importjson # Importjson library - must be imported before any json files
     >>> import classes          # Will import classes.json
 
-The contents of the classes.json file have now been translated into module attributes and classes, which can be used
-just as any other module or class. All the values defined in the json file have been translated into module attributes,
-classes, class attributes, or data attributes as appropriate (see Details section below for the expected json structure).
+The contents of the classes.json file have now been translated into module attributes and classes, which can be used just as any other module or class. All the values defined in the json file have been translated into module attributes, classes, class attributes, or data attributes as appropriate (see Details section below for the expected json structure):
+
+::
+.. code:: python
 
     >>> # Module attributes
     >>> classes.__author__, classes.__version__
@@ -58,20 +54,21 @@ As per the json implementation in the python standard library, all strings are t
 
 By default the module has a auto generated documentation string
 
+.. code:: python
     >>> print classes.__doc__
     Module classes - Created by JSONLoader
        Original json data : /home/tony/Development/python/importjson/src/classes.json
        Generated Mon 12 Oct 2015 22:30:54 BST (UTC +0100)
 
-The `__classes__` dictionary in the json file has been converted to one or more classes (in this example the 'point'
-class) - see the Details section part 3 & 4 for particulars
+The `__classes__` dictionary in the json file has been converted to one or more classes (in this example the 'point' class) - see the Details section part 3 & 4 for particulars
 
+.. code:: python
     >>> dir(classes)
     ['__builtins__', '__doc__', '__file__', '__json__', '__loader__', '__name__', '__package__', '__version__', 'point']
 
-The classes which are created have all the properties you might expect - for instance as defined by the `__doc__`
-`__class__attributes__` dictionary in  the json file we can define class data attributes - see Details section 5
+The classes which are created have all the properties you might expect - for instance as defined by the `__doc__` and the `__class__attributes__` dictionary in  the json file we can define class data attributes - see Details section 5
 
+.. code:: python
     >>> classes.point._val1
     1
     >>> classes.point._val2
@@ -79,28 +76,30 @@ The classes which are created have all the properties you might expect - for ins
     >>> classes.point.__doc__
     'Example class built from json'
 
-Instances which are created from these classes have the expected Instance data attributes with default values derived
-from the relevant entries in the json. Instance Data Attributes can be retrieved by name (as expected).
+Instances which are created from these classes have the expected Instance data attributes with default values derived from the relevant entries in the json. Instance Data Attributes can be retrieved by name (as expected).
 
+.. code:: python
     >>> inst = classes.point()
     >>> inst.x, inst.y, inst.colour
     0, 0, [0, 0, 0]
 
-The class is generated with a initializer (__init__ method) which accepts arguments so the default can be overridden.
-These arguments are in the same order as the json file.
+The class is generated with a initializer (__init__ method) which accepts arguments so the default can be overridden. These arguments are in the same order as the json file.
 
+.. code:: python
     >>> insta = classes.point(0, 1)
     >>> insta.x, insta.y, insta.colour
     0, 1, [0, 0, 0]
 
 Arguments to the initializer can be keyword arguments too - using the same names in the json file.
 
+.. code:: python
     >>> instb = classes.point(colour=[1,1,1])
     >>> instb.x, instb.y, instb.colour
     0, 0, [1, 1, 1]
 
 Instance Data attributes can be changed using the normal dot syntax :
 
+.. code:: python
     >>> insta.x = 23
     >>> insta.x, insta.y, insta.colour
     23, 0, [0,0,0]
@@ -117,53 +116,34 @@ The json file must be in a specific format :
 
     2 Top Level content
     -------------------
-    All key, value pairs in the top level are created as module level attributes (see example of __version__ above)
-    with the following notes and exceptions:
-        * An optional key of "__doc__" is found then the value is used as the module documentation string instead of an
-          automatically generated string (example as above classes.__doc__). While it is normal that the value is a
-          string if a different object is provided the documentation string will be set to the string representation of
-          that object
-        * An optional key of "__classes__" has the value of a dictionary - this dictionary is interpreted as the definition of
-          the classes in this module - see section 3.
+    All key, value pairs in the top level are created as module level attributes (see example of __version__ above) with the following notes and exceptions:
+        - An optional key of "__doc__" is found then the value is used as the module documentation string instead of an automatically generated string (example as above classes.__doc__). While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object
+        - An optional key of "__classes__" has the value of a dictionary - this dictionary is interpreted as the definition of the classes in this module - see section 3.
 
     3 Content of "__classes__" dictionary
     -------------------------------------
-    Within the "__classes__" dictionary in the json file, each key,value is a separate class to be created.
-    the key is the class name, and the value must be a dictionary (called the class defining dictionary) - see section 4
+    Within the "__classes__" dictionary in the json file, each key,value is a separate class to be created. the key is the class name, and the value must be a dictionary (called the class defining dictionary) - see section 4
 
     4 Content of a class defining dictionary
     ----------------------------------------
-    Within the class defining dictionary, each key,value pair is used as instance attributes; the value in the json file
-    is used as the default value for that attribute, and is set as such in the initializer method for the class. This is
-    true for all key,value pairs with the following notes and exceptions:
-        * An optional key of "__doc__" will set the documentation string for the class - unlike at module level there is
-          no automatically generated documentation string for the class. While it is normal that the value is a
-          string if a different object is provided the documentation string will be set to the string representation of
-          that object
-        * An optional key of "__class_attributes__" will have the value which is a dictionary : This dictionary defines
-          the names and values of the class data attributes (as opposed to the instance data attributes) - see section 5
-        * An optional key if "__parent__" will have a string value which is used as the name of a superclass for this
-          class
+    Within the class defining dictionary, each key,value pair is used as instance attributes; the value in the json file is used as the default value for that attribute, and is set as such in the initializer method for the class. This is true for all key,value pairs with the following notes and exceptions:
+        - An optional key of "__doc__" will set the documentation string for the class - unlike at module level there is no automatically generated documentation string for the class. While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object
+        - An optional key of "__class_attributes__" will have the value which is a dictionary : This dictionary defines the names and values of the class data attributes (as opposed to the instance data attributes) - see section 5
+        - An optional key if "__parent__" will have a string value which is used as the name of a superclass for this class
 
     5 Content of the "__class_attributes__" dictionary
     --------------------------------------------------
-    Within the "__class_attributes__" dictionary each key, value pair defines the name and value of a class data
-    attribute. There are no exceptions to this rule at this time.
+    Within the "__class_attributes__" dictionary each key, value pair defines the name and value of a class data attribute. There are no exceptions to this rule at this time.
 
 Notes and Comments
 ==================
-1 Instance data attributes are actually created with the name prefixed by a "_", thus marking the attribute as private.
-  A read/write descriptor is then created with the name as given in the json file.
-2 If the json defines Instance data attribute with a default value which is a mutable type (list or
-  dictionary), the initializer ensures that changes to the instance are not propagated to other instances.
-  See http://docs.python-guide.org/en/latest/writing/gotchas/ for a description of this issue.
-  There are no plans to allow this protection to be turned off.
+1 Instance data attributes are actually created with the name prefixed by a "_", thus marking the attribute as private. A read/write descriptor is then created with the name as given in the json file.
+2 If the json defines Instance data attribute with a default value which is a mutable type (list or dictionary), the initializer ensures that changes to the instance are not propagated to other instances. See .. _Common Python Gotchas http://docs.python-guide.org/en/latest/writing/gotchas/ for a description of this issue. There are no plans to allow this protection to be turned off.
 3 All strings are imported as Unicode - as can be seen from the __version__ example above
 
 Shortcomings
 ============
-1 It is not possible to use json to define tuples, sets or other complex python data types. json only supports strings,
-  lists, numbers and dictionaries. This is not a limitation of the importjson library, and cannot be fixed easily.
+1 It is not possible to use json to define tuples, sets or other complex python data types. json only supports strings, lists, numbers and dictionaries. This is not a limitation of the importjson library, and cannot be fixed easily.
 2 All instance data attributes are read/write, read_only is not possible in this implementation - see Futures
 3 It is not possible to set a documentation string for any of the instance data attributes - see Futures
 4 The current implementation does not pass data down the inheritance tree - BUG
