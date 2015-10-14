@@ -51,6 +51,8 @@ The contents of the ''classes.json'' file have now been translated into module a
 
 As per the json implementation in the python standard library, all strings are treated as unicode.
 
+**Warning** Because of the way that python implements imports - having classes.json and classes.py in the same directory or package the classes.json will be imported and the classes.py file will be effectively hidden, and cannot be imported.
+
 By default the module has a auto generated documentation string
 
 .. code-block:: python
