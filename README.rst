@@ -11,7 +11,7 @@ Example
 -------
 The json file called classes.json exists in your applications current directory
 
-::
+.. code-block:: json
 
     {
         "__version__":"0.1",
@@ -37,7 +37,7 @@ With the `importjson` library you can import this json directly into your applic
 lines as demonstrated here in the console
 
 ::
-.. code:: python
+.. code-block:: python
 
     >>> import importjson # Importjson library - must be imported before any json files
     >>> import classes          # Will import classes.json
@@ -45,7 +45,7 @@ lines as demonstrated here in the console
 The contents of the ''classes.json'' file have now been translated into module attributes and classes, which can be used just as any other module or class. All the values defined in the json file have been translated into module attributes, classes, class attributes, or data attributes as appropriate (see Details section below for the expected json structure):
 
 ::
-.. code:: python
+.. code-block:: python
 
     >>> # Module attributes
     >>> classes.__author__, classes.__version__
@@ -55,7 +55,7 @@ As per the json implementation in the python standard library, all strings are t
 
 By default the module has a auto generated documentation string
 
-.. code:: python
+.. code-block:: python
 
     >>> print classes.__doc__
     Module classes - Created by JSONLoader
@@ -64,14 +64,14 @@ By default the module has a auto generated documentation string
 
 The ``__classes__`` dictionary in the json file has been converted to one or more classes (in this example the 'point' class) - see the Details section part 3 & 4 for particulars
 
-.. code:: python
+.. code-block:: python
 
     >>> dir(classes)
     ['__builtins__', '__doc__', '__file__', '__json__', '__loader__', '__name__', '__package__', '__version__', 'point']
 
 The classes which are created have all the properties you might expect - for instance as defined by the ``__doc__`` and the ``__class__attributes__`` dictionary in  the json file we can define class data attributes - see Details section 5
 
-.. code:: python
+.. code-block:: python
 
     >>> classes.point._val1
     1
@@ -82,7 +82,7 @@ The classes which are created have all the properties you might expect - for ins
 
 Instances which are created from these classes have the expected Instance data attributes with default values derived from the relevant entries in the json. Instance Data Attributes can be retrieved by name (as expected).
 
-.. code:: python
+.. code-block:: python
 
     >>> inst = classes.point()
     >>> inst.x, inst.y, inst.colour
@@ -90,7 +90,7 @@ Instances which are created from these classes have the expected Instance data a
 
 The class is generated with a initializer (``__init__`` method) which accepts arguments so the default can be overridden. These arguments are in the same order as the json file.
 
-.. code:: python
+.. code-block:: python
 
     >>> insta = classes.point(0, 1)
     >>> insta.x, insta.y, insta.colour
@@ -98,7 +98,7 @@ The class is generated with a initializer (``__init__`` method) which accepts ar
 
 Arguments to the initializer can be keyword arguments too - using the same names in the json file.
 
-.. code:: python
+.. code-block:: python
 
     >>> instb = classes.point(colour=[1,1,1])
     >>> instb.x, instb.y, instb.colour
@@ -106,7 +106,7 @@ Arguments to the initializer can be keyword arguments too - using the same names
 
 Instance Data attributes can be changed using the normal dot syntax :
 
-.. code:: python
+.. code-block:: python
 
     >>> insta.x = 23
     >>> insta.x, insta.y, insta.colour
@@ -128,7 +128,7 @@ The Top level of the json file **must** be a directory.
  - An optional key of ``__classes__`` has the value of a dictionary - this dictionary is interpreted as the definition of the classes in this module - see section 3.
 
 3 Content of ``__classes__`` dictionary
--------------------------------------
+---------------------------------------
 Within the ``__classes__`` dictionary in the json file, each key,value is a separate class to be created. the key is the class name, and the value must be a dictionary (called the class defining dictionary) - see section 4
 
 4 Content of a class defining dictionary
