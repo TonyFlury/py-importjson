@@ -43,7 +43,8 @@ lines as demonstrated here in the console :
     $ python
     Type "help", "copyright", "credits" or "license" for more information.
 
-    >>> import importjson       # Importjson library - must be imported before any json files
+    >>> # Importjson library - must be imported before any json files
+    >>> import importjson
     >>> import classes          # Will import classes.json
 
 The contents of the classes.json file have now been translated into module attributes and classes, which can be used
