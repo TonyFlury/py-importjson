@@ -28,7 +28,9 @@ import datetime
 import time
 import copy
 
-__version__ = "0.1"
+import version
+
+__version__ = version.__version__
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '11 Oct 2015'
 
