@@ -67,9 +67,21 @@ The ``__classes__`` dictionary in the json file has been converted to one or mor
 .. code-block:: python
 
     >>> dir(classes)
-    ['__builtins__', '__doc__', '__file__', '__json__', '__loader__', '__name__', '__package__', '__version__', 'point']
+    ['__builtins__', '__doc__', '__file__', '__json__', '__loader__', '__name__', '__package__', '__version__', '__author__','point']
 
 The classes which are created have all the properties you might expect - for instance as defined by the ``__doc__`` and the ``__class__attributes__`` dictionary in  the json file we can define class data attributes - see Details section 5
+
+**Note** : Special module variables :
+From the ``dir`` listing above you will see a number of special module variables :
+ - ``__builtins__`` : as per all modules this is the standard python builtins modules
+ - ``__doc__`` : as demonstrated above this is the module documentation string (either the auto generated or defined in the json file.
+ - ``__file__`` : this is the full path to the json file
+ - ``__json__`` : the original json file imported as a dictionary. It is included for interest only, it should not ever be necessary to use the data in this dictionary (as it has all been converted to the specific module data attributes, classes and other content.
+ - ``__loader__`` : This is the custom loader object (which the importjson library implements).
+ - ``__name__`` : As with all other modules - this is the fully qualified module name.
+ - ``__package__`` : This is False, as the json file cannot ever define a package
+
+The ``__version__`` and ``__author__`` variables are not special variables - as they are defined by the json file.
 
 .. code-block:: python
 
@@ -139,14 +151,15 @@ Within the class defining dictionary, each key,value pair is used as instance at
  - An optional key if ``__parent__`` will have a string value which is used as the name of a superclass for this class
 
 5 Content of the ``__class_attributes__`` dictionary
---------------------------------------------------
+----------------------------------------------------
 Within the ``__class_attributes__`` dictionary each key, value pair defines the name and value of a class data attribute. There are no exceptions to this rule at this time.
 
 Notes and Comments
 ==================
 1. Instance data attributes are actually created with the name prefixed by a ``_``, thus marking the attribute as private. A read/write descriptor is then created with the name as given in the json file.
 2. If the json defines Instance data attribute with a default value which is a mutable type (list or dictionary), the initializer ensures that changes to the instance are not propagated to other instances. See [Common Python Gotchas](http://docs.python-guide.org/en/latest/writing/gotchas/) for a description of this issue. There are no plans to allow this protection to be turned off.
-3. All strings are imported as Unicode - as can be seen from the ``__version__`` example above
+3. All strings are imported as Unicode - as can be seen from the ``__version__`` example above.
+4. The module works by creating a python code block which is then compiled into the module and made available to the application. That code block is available for information : <module>.__loader__.get_source(<module_name) - this is NOT the json file. The json file is available through the ``__file__`` module attribute, and the imported dictionary can be seen by inspecting ``__json__`` module attribute. Under normal circumstance it should not be necessary to use either the json dictionary or the generated code.
 
 Shortcomings
 ============
