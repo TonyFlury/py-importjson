@@ -19,6 +19,15 @@ Testable Statements :
     Are instance attribute property methods created
 """
 
+# --------------------------------------------------------------------
+#                                Change Log
+# Version 0.0.1a2
+#       Bug fix #1 - Need to search sys.path when looking for a top level module
+#       Bug fix #2 - Arguments are passed down to parent class correctly
+# Version 0.0.1a1
+#       Initial version.
+# ---------------------------------------------------------------------
+
 import sys
 import os
 import imp
@@ -47,14 +56,15 @@ class JSONFinder(object):
 
            Implemented as a generator to allow for multiple suffixes in future.
         """
-        # path is a list - not a string.
-        path = path[-1] if path else os.getcwd()
+        # Bugfix #1 - sys.path not being searched
+        path = path if path else sys.path
 
         # Extract the module name component only from the fully qualified module name
         mod_name = fullname.split(".")[-1]
 
-        for suff in JSONFinder._valid_suffix_:
-            yield os.path.join(path, mod_name) + suff
+        for p in path:
+            for suff in JSONFinder._valid_suffix_:
+                yield os.path.join(p, mod_name) + suff
 
     def __str__(self):
         return "<JSONFinder instance >"
@@ -86,52 +96,53 @@ class JSONFinder(object):
         return ca
 
     # noinspection PyMethodMayBeStatic
-    def _methods(self, data_dict, mod_name, cls_name):
+    def _methods(self, cls_dict, mod_name, cls_name):
         """Create all the instance methods (__init__ and properties)"""
         mc = ""
         ignore = ["__doc__", "__class_attributes__"]
         """Generate code for class definition"""
 
-        if not isinstance(data_dict, dict):
+        if not isinstance(cls_dict, dict):
             raise ImportError("Unable to Import : Expecting dictionary for instance attributes for {} class".format(
                 cls_name))
 
         al = [
             "{}={}".format(var, repr(value) if not isinstance(value, (list, dict)) else "None")
-            for var, value in data_dict.iteritems() if var not in ignore]
+            for var, value in cls_dict.iteritems() if var not in ignore]
 
         if not al:
             mc += "    pass"
             return mc
 
-        mc += "\n    def __init__(self, {}):\n".format(",".join(al))
+        mc += "\n    def __init__(self, {}, *args, **kwargs):\n".format(",".join(al))
         mc += "".join("        self._{} = {}\n".format(var,
                                                        var if not isinstance(default_value, (list, dict)) else
                                                        "{} if {} is None else {}".format(repr(default_value), var, var))
-                      for var, default_value in data_dict.iteritems() if var not in ignore
+                      for var, default_value in cls_dict.iteritems() if var not in ignore
                       )
+        mc += "        super({}, self).__init__(*args, **kwargs)".format(cls_name)
 
         ptemplate = """
     @property
-    def {name}(self):
-        \"\"\"set/get {name} attribute - allows for <{modname}.{clsname}>.{name} = <value>\"\"\"
-        return self._{name}
+    def {attrname}(self):
+        \"\"\"set/get {attrname} attribute - allows for <{modname}.{clsname}>.{attrname} = <value>\"\"\"
+        return self._{attrname}
 
-    @{name}.setter
-    def {name}(self, value):
-        self._{name} = value
+    @{attrname}.setter
+    def {attrname}(self, value):
+        self._{attrname} = value
 """
-        mc += "".join(ptemplate.format(modname=mod_name, clsname=cls_name, name=var)
-                      for var in data_dict if var not in ignore)
+        mc += "".join(ptemplate.format(modname=mod_name, clsname=cls_name, attrname=var)
+                      for var in cls_dict if var not in ignore)
 
         return mc
 
-    def _create_class(self, cls_name, data_dict, mod_name):
+    def _create_class(self, cls_name, cls_dict, mod_name):
         """ Create a class definition for the given class"""
-        if not isinstance(data_dict, dict):
+        if not isinstance(cls_dict, dict):
             raise ImportError("Expecting dictionary for a class")
 
-        working_copy = copy.deepcopy(data_dict)
+        working_copy = copy.deepcopy(cls_dict)
         cls_def = ""
 
         # Class definition
@@ -160,15 +171,15 @@ class JSONFinder(object):
             return cls_def
 
         # Generate __init__ method and properties
-        cls_def += self._methods(working_copy, mod_name, cls_name)
+        cls_def += self._methods(cls_dict=working_copy, mod_name=mod_name, cls_name=cls_name)
         return cls_def
 
-    def _create_classes(self, data_dict, mod_name):
+    def _create_classes(self, classes_dict, mod_name):
         """Take the __classes dictionary, and create one class per instance"""
         cc = ""
-        assert isinstance(data_dict, dict)
-        for cls in data_dict:
-            cc += self._create_class(cls, data_dict[cls], mod_name)
+        assert isinstance(classes_dict, dict)
+        for cls in classes_dict:
+            cc += self._create_class(cls_name=cls, cls_dict=classes_dict[cls], mod_name=mod_name)
         return cc
 
     def is_package(self, mod_name):
@@ -204,7 +215,7 @@ class JSONFinder(object):
         mod_code = ""
 
         if "__doc__" in json_dict:
-            mod_code += '"""{}"""'.format(json_dict["__doc__"].encode("utf-8"))
+            mod_code += '"""{}"""\n\n'.format(json_dict["__doc__"].encode("utf-8"))
         else:
             mod_code += '"""Module {} - Created by {} \n' \
                         '   Original json data : {}\n' \
@@ -220,7 +231,7 @@ class JSONFinder(object):
         for key in json_dict:
             if key == "__classes__":
                 if isinstance(json_dict[key], dict):
-                    mod_code += self._create_classes(json_dict[key], mod_name)
+                    mod_code += self._create_classes(classes_dict = json_dict[key], mod_name = mod_name)
                 else:
                     raise ImportError("Unable to Import : classes must be defined as json dictionaries {}".format(
                         JSONFinder._found_modules[mod_name]))

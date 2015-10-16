@@ -58,7 +58,7 @@ By default the module has a auto generated documentation string
 .. code-block:: python
 
     >>> print classes.__doc__
-    Module classes - Created by JSONLoader
+    Module classes - Created by JSONFinder
        Original json data : /home/tony/Development/python/importjson/src/classes.json
        Generated Mon 12 Oct 2015 22:30:54 BST (UTC +0100)
 
