@@ -149,12 +149,22 @@ dictionary within the class definition - as an example :
     }
 
 This would implement a definition of the ``x`` attribute on instances of the ``point`` class could only ever be set to
-an integer (or boolean), and must between -100 and 100 inclusive. The allowed criteria are ``type``,``min`` and ``max``.
-``type`` can be any one of ``list``, ``str``,``int``,``float``,``dict``,``bool``.
+an integer (or boolean), and must between -100 and 100 inclusive. The allowed criteria are ``type``, ``min`` and ``max``.
+``type`` can be any one of ``list``, ``str``, ``int``, ``float``, ``dict`` or ``bool``.
 
  - A ``type`` of ``float`` will allow both floats and integer values
  - A ``type`` of ``int`` will allow both integers and booleans values
  - A ``type`` of ``bool`` will only allow either True or False values
+
+
+ - If an attempt is made to set an attribute to a value outside the range defined by ``min`` and ``max`` the ``ValueError`` exception will be raised.
+
+ - If an attempt is made to set an attribute to a value which does not match the type criteria, then a ``TypeError`` exception will be raised.
+
+ - All criteria are optional - but an empty constraints section has no effect.
+
+**Warning** You must ensure that the default value given for the data attribute is valid based on any constraints defined for that attribute. If the default value is invalid, then the JSON will import successfully, but the class will not be able to be created with it's default values.
+
 
 
 ------------
