@@ -58,7 +58,7 @@ By default the module has a auto generated documentation string
 .. code-block:: python
 
     >>> print classes.__doc__
-    Module classes - Created by JSONFinder
+    Module classes - Created by JSONLoader
        Original json data : /home/tony/Development/python/importjson/src/classes.json
        Generated Mon 12 Oct 2015 22:30:54 BST (UTC +0100)
 
@@ -123,6 +123,67 @@ Instance Data attributes can be changed using the normal dot syntax :
     >>> insta.x = 23
     >>> insta.x, insta.y, insta.colour
     23, 0, [0,0,0]
+
+Constraints
+-----------
+
+It is possible to define constraint criteria for the Instance Data Attributes, by using a ``__constraints__`` sub
+dictionary within the class definition - as an example :
+
+.. code-block:: json
+
+    {
+        "__classes__" : {
+        "point": {
+            "x": 0,
+            "y": 0,
+            "__constraints__": {
+                "x":{
+                    "type":"int",
+                    "min":-100,
+                    "max":100
+                    }
+                }
+             }
+        }
+    }
+
+This would implement a definition of the ``x`` attribute on instances of the ``point`` class could only ever be set to
+an integer (or boolean), and must between -100 and 100 inclusive. The allowed criteria are ``type``,``min`` and ``max``.
+``type`` can be any one of ``list``, ``str``,``int``,``float``,``dict``,``bool``.
+
+ - A ``type`` of ``float`` will allow both floats and integer values
+ - A ``type`` of ``int`` will allow both integers and booleans values
+ - A ``type`` of ``bool`` will only allow either True or False values
+
+
+------------
+
+*Note* : With the AllDictionariesAsClasses set as True - the example JSON used at the top of this README could be
+changed to be as follows :
+
+.. code-block:: json
+
+    {
+        "__version__":"0.1",
+        "__author__":"Tony",
+        "point": {
+            "__doc__": "Example class built from json",
+            "__class_attributes__": {
+                              "_val1": 1,
+                              "_val2": 2
+                            },
+            "x": 0,
+            "y": 0,
+            "colour": [0,0,0]
+        }
+    }
+
+Note the absence of the "__classes__" dictionary. The advantage of this form is that it is more natural form or python,
+although it is impossible to define Module Data Attributes which are dictionaries. It is likely this form will become
+the default setting for the module.
+
+
 
 Details
 =======
