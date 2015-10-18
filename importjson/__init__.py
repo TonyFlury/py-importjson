@@ -1,1 +1,1 @@
-from . import importjson
+from importjson import *
