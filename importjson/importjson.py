@@ -120,7 +120,6 @@ class JSONLoader(object):
         """Create all the instance methods (__init__ and properties)"""
         mc = ""
         ignore = ["__doc__", "__class_attributes__", "__constraints__"]
-        """Generate code for class definition"""
 
         if not isinstance(cls_dict, dict):
             raise ImportError("Unable to Import : Expecting dictionary for instance attributes for {} class".format(
@@ -131,13 +130,13 @@ class JSONLoader(object):
             for var, value in cls_dict.iteritems() if var not in ignore]
 
         if not al:
-            mc += "    pass"
+            # mc += "    pass"
             return mc
 
         mc += "\n    def __init__(self, {arg_list}, *args, **kwargs):\n".format(arg_list=",".join(al))
         mc += "        self._constraints = {value}\n".format(
             value=self.dictrepr(cls_dict.get("__constraints__", "{}")))
-        mc += "".join("        self._{attr_name} = self._constrain(\"{attr_name}\", {attr_value})\n".format(
+        mc += "".join("        self._{attr_name} = self._constrain_{attr_name}({attr_value})\n".format(
             attr_name=key,
             attr_value=key if not isinstance(value, (list, dict)) else
             "{attr_value} if {attr_name} is None else {attr_name}".format(
@@ -148,7 +147,7 @@ class JSONLoader(object):
         mc += "        super({}, self).__init__(*args, **kwargs)\n".format(cls_name)
 
         mc += """
-    def _constrain(self, attr_name, value):
+    def __constrain(self, attr_name, value):
         \"\"\"Checks the constraints for this attribute\"\"\"
         if not isinstance(self._constraints, dict):
             return value
@@ -168,6 +167,10 @@ class JSONLoader(object):
                         attr_name=attr_name,
                         type = cons["type"],
                         val = repr(value) ))
+
+        # Don't apply min and max to dictionaries or lists
+        if isinstance(value,(dict,list)):
+            return value
 
         if "min" in cons and "max" in cons:
             if cons["min"] <= value <= cons["max"]:
@@ -197,6 +200,10 @@ class JSONLoader(object):
         return value
     """
         ptemplate = """
+
+    def _constrain_{attr_name}(self, value):
+        return self.__constrain('{attr_name}', value)
+
     @property
     def {attr_name}(self):
         \"\"\"set/get {attr_name} attribute - allows for <{mod_name}.{cls_name}>.{attr_name} = <value>\"\"\"
@@ -205,7 +212,7 @@ class JSONLoader(object):
     @{attr_name}.setter
     def {attr_name}(self, value):
         try:
-            nv = self._constrain(\"{attr_name}\", value)
+            nv = self._constrain_{attr_name}(value)
         except:
             raise
         else:

@@ -193,37 +193,101 @@ Note the absence of the "__classes__" dictionary. The advantage of this form is 
 although it is impossible to define Module Data Attributes which are dictionaries. It is likely this form will become
 the default setting for the module.
 
-
+-------------------------
 
 Details
 =======
 
+0 Module Configuration
+----------------------
+The importjson module supports two configuration options, set using ``importjson.configure(<config_item>,<value>``. The config_items supported are :
+
+- AllDictionariesAsClasses : When set True the ``__classes__`` dictionary is not required and  all dictionaries under the JSON top level as translated into classes. Valid values are True and False. The default for this value is current False, but that default maybe True under later versions. If set incorrectly the JSON file will import successfully, but crucially the classes one might expect to exist will not.
+
+- JSONSuffixes : A list of valid JSON file name suffixes which are used when searching for potential JSON files to import. The default is [".json"]. Setting this value incorrectly will prevent the library from finding or importing any JSON files - so take care.
+
+1 JSON file structure
+---------------------
 The json file must be in a specific format :
 
-1 JSON file Top Level
----------------------
 The Top level of the json file **must** be a directory.
 
 2 Top Level content
 -------------------
 **All** key, value pairs in the top level are created as module level attributes (see example of ``__version__`` above) with the following notes and exceptions:
- - An optional key of ``__doc__`` is found then the value is used as the module documentation string instead of an automatically generated string (example as above ``classes.__doc__`` example). While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object
- - An optional key of ``__classes__`` has the value of a dictionary - this dictionary is interpreted as the definition of the classes in this module - see section 3.
+ - An optional key of ``__doc__`` is found then the value is used as the module documentation string instead of an automatically generated string (example as above ``classes.__doc__`` example). While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object.
+ - If the configuration item AllDictionariesAsClasses is set to False, then an optional key of ``__classes__`` which has the value of a dictionary - this dictionary is interpreted as the definition of the classes in this module - see section 3. Any other dictionary under the Top Level JSON is treated as a Module Data Attribute.
+ - If the configuration item AllDictionariesAsClasses is set to True, then every dictionary under the Top Level is interpreted as the definition of the classes in this module, with the key name as the class name - see section 4.
 
 3 Content of ``__classes__`` dictionary
 ---------------------------------------
-Within the ``__classes__`` dictionary in the json file, each key,value is a separate class to be created. the key is the class name, and the value must be a dictionary (called the class defining dictionary) - see section 4
+When the configuration item AllDictionariesAsClasses is set to False, within the ``__classes__`` dictionary in the json file, each key,value is a separate class to be created. The key is the class name, and the value must be a dictionary (called the class defining dictionary) - see section 4. An example of this form of JSON file is used above.
 
 4 Content of a class defining dictionary
 ----------------------------------------
 Within the class defining dictionary, each key,value pair is used as instance attributes; the value in the json file is used as the default value for that attribute, and is set as such in the initializer method for the class. This is true for all key,value pairs with the following notes and exceptions:
  - An optional key of ``__doc__`` will set the documentation string for the class - unlike at module level there is no automatically generated documentation string for the class. While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object
  - An optional key of ``__class_attributes__`` will have the value which is a dictionary : This dictionary defines the names and values of the class data attributes (as opposed to the instance data attributes) - see section 5
- - An optional key if ``__parent__`` will have a string value which is used as the name of a superclass for this class
+ - An optional key of ``__parent__`` will have a string value which is used as the name of a superclass for this class.
+ - An optional key ``__constraints__`` which will have a dictionary value - and define constrainst to be applied to the value of individual Instance Data Attributes - see section 6
 
 5 Content of the ``__class_attributes__`` dictionary
 ----------------------------------------------------
 Within the ``__class_attributes__`` dictionary each key, value pair defines the name and value of a class data attribute. There are no exceptions to this rule at this time.
+
+6 Content of the ``__constraints__`` dictionary
+-----------------------------------------------
+Within the ``__constraints__`` dictionary each key is the the name Instance Data attribute, as defined within the class defining dictionary. It is not neccessary for every Instance Data Attribute to be represented by a key in the ``__constraints__`` dictionary.
+
+Each key has the value of a dictionary, and this dictionary has zero or more keys within it (every key being optional) :
+- ``type`` : Can be used to constrain the type of value allowed for the attribute
+  - ``list`` : constrains the type to be a list (the values of the items are not restricted)
+  - ``str`` : constrains the type to be a string or basestring
+  - ``int``  : constrains the type to be a integer or boolean
+  - ``float``  : constrains the type to be a float or integer
+  - ``dict``  : constrains the type to be a dictionary (keys and values are not restricted)
+  - ``bool`` : constrains the type to be boolean (i.e. True or False Only)
+- ``min`` : Can be used to constrain the minimum value allowed for the attribute - applied to strings and numeric values only
+- ``max`` : Can be used to constrain the minimum value allowed for the attribute - applied to strings and numeric values only
+
+
+If an attempt is made to set an attribute to a value outside the range defined by ``min`` and ``max`` the ``ValueError`` exception will be raised. This include setting the value within the Instance initializer.
+
+If an attempt is made to set an attribute to a value which does not match the type criteria, then a ``TypeError`` exception will be raised. This includes setting the value within the Instance initializer.
+
+All criteria are optional - an empty constraints section for a given attribute has no effect.
+
+**Warning** Since the constraints are applied every time the value is set, including the initializer, you must ensure that the default value given for the data attribute is valid based on any constraints defined for that attribute. If the default value is invalid, then the JSON will import successfully, but the class will not be able to be created with it's default values.
+
+Extending constraints
+---------------------
+The constraints system has been constructed to allow simple extensions. By subclassing the class, and creating a method called ``_constrain_<attr_name>`` you can add further tests to the constraints applied to the named attribute. As an example
+
+.. code-block::python
+
+    import importjson
+    import json_classes # Defines the `classa` class which has Data Instance attribute x
+
+    class XMustBeEven(json_classes.classa):
+        def _constrain_x(self, value):
+            value = super(XMustBeEven,self)._constrain_x(value)
+
+            if value % 2 == 0:
+                return value
+            else:
+                raise ValueError("Value Error : x must be an even number")
+
+    e = XMustBeEven()
+    e.x = 2 # will be fine - no exceptions expected
+    e.x = 3
+    Value Error : x must be an even number
+
+The ``_constrain_<attr_name>`` method takes the ``value` as an argument (this is the attempted new value, not the current value, and must
+either return a value (which will be stored as the value of the attribute, or must raise an Exception (ValueError and TypeError are the norms)
+
+As shown in the example any extension should call the SubClass _constrain method first, as it is that method which applies all of the constrains defined in the JSON file - including any type checks. By allowing the subclass method to execute first, you can be sure that the value returned is the expected type (assuming that the JSON file constrains the type).
+
+-------------------------------
 
 Notes and Comments
 ==================
@@ -237,13 +301,11 @@ Shortcomings
 1. It is not possible to use json to define tuples, sets or other complex python data types. json only supports strings, lists, numbers and dictionaries. This is not a limitation of the importjson library, and cannot be fixed easily.
 2. All instance data attributes are read/write, read_only is not possible in this implementation - see Futures
 3. It is not possible to set a documentation string for any of the instance data attributes - see Futures
-4. The current implementation does not pass data down the inheritance tree - BUG
 
 Future
 ======
 Possible future enhancements :
  - Read only instance data attributes
- - Criteria (min, max, allowed values) for attributes.
  - Auto generation of factory methods, using a specific attribute as the key
  - Auto generation of human friendly ``__str__`` and ``__repr__`` functions
  - Documentation strings for the Instance Data Attributes
