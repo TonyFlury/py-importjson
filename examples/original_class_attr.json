@@ -1,0 +1,13 @@
+{
+    "__classes__" : {
+      "Animals": {
+        "__doc__": "Animal class with class attributes",
+        "__class_attributes__": {
+          "elephants": [],
+          "hippos": [],
+          "lions": [],
+          "giraffes":[]
+        }
+      }
+    }
+}
