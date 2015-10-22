@@ -187,7 +187,7 @@ See Section 6 below for details of the Constrains system and how to extend it by
         }
     }
 
-Note the existance of the "__classes__" dictionary. This form is termed as the explicit form. The advantage of this form is that it is possible to define Module Data Attributes which are dictionaries, something which impossible in the other form of json.
+Note the existence of the "__classes__" dictionary. This form is termed as the explicit form. The advantage of this form is that it is possible to define Module Data Attributes which are dictionaries, something which impossible in the other form of json.
 
 -------------------------
 
