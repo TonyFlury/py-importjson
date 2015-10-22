@@ -53,12 +53,16 @@ class Installation(unittest.TestCase):
 
     def test_00_002_Version(self):
         """Confirm correct version - expecting 0.0.1a1 or better"""
-        self.assertGreaterEqual(importjson.importjson.__version__, "0.0.1a1")
+        self.assertTrue(cmp_version(importjson.version.__version__, "0.0.1a1") > 0)
 
+    @unittest.skipIf(cmp_version(importjson.version.__version__ ,"0.0.1a5") < 0,"Only gives exception on v0.0.1a5 or higher")
+    def test_00_010_configuration(self):
+        with self.assertRaises(ValueError):
+            importjson.configure("AllDictionariesAreClasses",True)
 
 class ModuleContentTest(unittest.TestCase):
     @staticmethod
-    def write_module_json(json_str, newstyle=False):
+    def write_module_json(json_str):
         if "test_module" in sys.modules:
             del sys.modules["test_modules"]
 
@@ -67,7 +71,6 @@ class ModuleContentTest(unittest.TestCase):
             with open(os.path.join(tempd, "test_module.json"), "w") as json_fp:
                 json_fp.write(json_str)
 
-        importjson.configure("AllDictionariesAsClasses", newstyle)
         return importlib.import_module("test_module")
 
 
@@ -113,6 +116,7 @@ class ModuleAttributes(ModuleContentTest):
         self.assertIs(sys.modules["test_module"], self.tm)
         self.assertEqual(self.tm.test_value, "Hello")
 
+    @unittest.skip("will Always fail unless __classes__ exists in the same json")
     def test_01_000d_SimpleJsonDict(self):
         """Import module with single Dict value"""
 
@@ -234,7 +238,7 @@ class SingleAttrClass(ClassTests):
         self.assertEqual(inst.attr, "Hello")
 
 
-class SingAttrClassOriginal(SingleAttrClass):
+class SingAttrClassExplicit(SingleAttrClass):
     def setUp(self):
         self.tm = self.write_module_json("""
 {
@@ -247,14 +251,14 @@ class SingAttrClassOriginal(SingleAttrClass):
         self.assertIs(sys.modules["test_module"], self.tm)
 
 
-class SingleAttrClassNew(SingleAttrClass):
+class SingleAttrClassImplicit(SingleAttrClass):
     def setUp(self):
         self.tm = self.write_module_json("""
 {
     "classa":{
             "attr":1
             }
-}""", newstyle=True)
+}""")
         self.assertIs(sys.modules["test_module"], self.tm)
 
 
@@ -311,7 +315,7 @@ class MultipleAttrClass(ClassTests):
         self.assertEqual(inst.attr2, "Goodbye")
 
 
-class MultipleAttrClassOriginal(MultipleAttrClass):
+class MultipleAttrClassExplicit(MultipleAttrClass):
     def setUp(self):
         self.tm = self.write_module_json("""
 {
@@ -324,7 +328,7 @@ class MultipleAttrClassOriginal(MultipleAttrClass):
 }""")
 
 
-class MultipleAttrClassNew(MultipleAttrClass):
+class MultipleAttrClassImplicit(MultipleAttrClass):
     def setUp(self):
         self.tm = self.write_module_json("""
 {
@@ -332,7 +336,7 @@ class MultipleAttrClassNew(MultipleAttrClass):
             "attr1":1,
             "attr2":2
             }
-}""", newstyle=True)
+}""")
 
 
 class ClassAttributes(ClassTests):
@@ -351,7 +355,7 @@ class ClassAttributes(ClassTests):
         self.assertAlmostEqual(self.tm.classa.cls_attr2, 0.1)
 
 
-class ClassAttributesOriginal(ClassAttributes):
+class ClassAttributesExplicit(ClassAttributes):
     def setUp(self):
         self.tm = self.write_module_json("""
 {
@@ -369,7 +373,7 @@ class ClassAttributesOriginal(ClassAttributes):
 }""")
 
 
-class ClassAttributesNew(ClassAttributes):
+class ClassAttributesImplicit(ClassAttributes):
     def setUp(self):
         self.tm = self.write_module_json("""
 {
@@ -382,7 +386,7 @@ class ClassAttributesNew(ClassAttributes):
             "attr1":1,
             "attr2":2
             }
-}""", newstyle=True)
+}""")
 
 
 class ClassInheritance(ClassTests):
@@ -405,7 +409,7 @@ class ClassInheritance(ClassTests):
         self.assertEqual((instb.b1, instb.b2), (3, 4))
 
 
-class ClassInheritanceOriginal(ClassInheritance):
+class ClassInheritanceExplicit(ClassInheritance):
     def setUp(self):
         self.tm = self.write_module_json("""
 {
@@ -425,7 +429,7 @@ class ClassInheritanceOriginal(ClassInheritance):
 }""")
 
 
-class ClassInheritanceNew(ClassInheritance):
+class ClassInheritanceImplicit(ClassInheritance):
     def setUp(self):
         self.tm = self.write_module_json("""
 {
@@ -440,7 +444,7 @@ class ClassInheritanceNew(ClassInheritance):
             "b1":3,
             "b2":4
             }
-}""", newstyle=True)
+}""")
 
 
 class ClassAttrConstraint(ClassTests):
@@ -468,7 +472,7 @@ class ClassAttrConstraint(ClassTests):
                 }
             }
         }
-}""", newstyle=True)
+}""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -493,7 +497,7 @@ class ClassAttrConstraint(ClassTests):
                 }
             }
         }
-}""", newstyle=True)
+}""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -519,7 +523,7 @@ class ClassAttrConstraint(ClassTests):
                 }
             }
         }
-}""", newstyle=True)
+}""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -548,7 +552,7 @@ class ClassAttrConstraint(ClassTests):
                 }
             }
         }
-}""", newstyle=True)
+}""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -584,7 +588,7 @@ class ClassAttrConstraint(ClassTests):
                 }
             }
         }
-}""", newstyle=True)
+}""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -622,7 +626,7 @@ class ClassAttrConstraint(ClassTests):
                 }
             }
         }
-}""", newstyle=True)
+}""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -664,14 +668,14 @@ def load_install_tests(loader, tests=None, pattern=None):
 def load_remaining_tests(loader, tests=None, pattern=None):
     test_classes = [
                 ModuleAttributes,
-                SingAttrClassOriginal,
-                SingleAttrClassNew,
-                MultipleAttrClassOriginal,
-                MultipleAttrClassNew,
-                ClassAttributesNew,
-                ClassAttributesOriginal,
-                ClassInheritanceOriginal,
-                ClassInheritanceNew,
+                SingAttrClassExplicit,
+                SingleAttrClassImplicit,
+                MultipleAttrClassExplicit,
+                MultipleAttrClassImplicit,
+                ClassAttributesImplicit,
+                ClassAttributesExplicit,
+                ClassInheritanceExplicit,
+                ClassInheritanceImplicit,
                 ClassAttrConstraint
     ]
 

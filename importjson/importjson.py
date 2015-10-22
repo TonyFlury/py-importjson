@@ -49,11 +49,14 @@ __version__ = version.__version__
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '11 Oct 2015'
 
-__configuration__ = {"AllDictionariesAsClasses": False,
-                     "JSONSuffixes": [".json"]}
+__configuration__ = {"JSONSuffixes": [".json"]}
 
+__obsolete__ = {"AllDictionariesAsClasses":"No longer required - the different forms of json are automatically recognised"}
 
 def configure(key, value):
+    if key in __obsolete__:
+        raise ValueError("Obsolete Configuration : {} : {}".format(key,__obsolete__[key]))
+
     if key not in __configuration__:
         raise ValueError("Unknown Configuration Item : {}".format(key))
     else:
@@ -317,6 +320,10 @@ class JSONLoader(object):
                                                          time.strftime("%Z (UTC %z)")
                                                          )
 
+
+        # Do we have Explicit or implicit classes
+        implicit = False if "__classes__" in json_dict else True
+
         # Scan through the dictionary - taking specials into account
         for key in json_dict:
 
@@ -324,7 +331,7 @@ class JSONLoader(object):
             if key == "__doc__":
                 continue
 
-            if not get_configure("AllDictionariesAsClasses"):
+            if not implicit :
                 if key == "__classes__":
                     if isinstance(json_dict[key], dict):
                         mod_code += self._create_classes(classes_dict=json_dict[key], mod_name=mod_name)
@@ -332,15 +339,14 @@ class JSONLoader(object):
                         raise ImportError("Unable to Import : classes must be defined as json dictionaries {}".format(
                             JSONLoader._found_modules[mod_name]))
                 else:
-                    # Everything else is treated as a module level attribute - will break if the value is a dictionary
+                    # Everything else is treated as a module level attribute
                     mod_code += "{} = {}\n".format(key, self.dictrepr(json_dict[key]))
             else:
-                if get_configure("AllDictionariesAsClasses"):
-                    if isinstance(json_dict[key], dict):
-                        mod_code += self._create_class(cls_name=key, cls_dict=json_dict[key], mod_name=mod_name)
-                    else:
-                        # Everything else is treated as a module level attribute
-                        mod_code += "{} = {}\n".format(key, self.dictrepr(json_dict[key]))
+                if isinstance(json_dict[key], dict):
+                    mod_code += self._create_class(cls_name=key, cls_dict=json_dict[key], mod_name=mod_name)
+                else:
+                    # Everything else is treated as a module level attribute
+                    mod_code += "{} = {}\n".format(key, self.dictrepr(json_dict[key]))
 
         return mod_code
 

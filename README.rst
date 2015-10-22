@@ -16,7 +16,6 @@ The json file called classes.json exists in your applications current directory
     {
         "__version__":"0.1",
         "__author__":"Tony",
-        "__classes__" : {
         "point": {
             "__doc__": "Example class built from json",
             "__class_attributes__": {
@@ -27,7 +26,6 @@ The json file called classes.json exists in your applications current directory
             "y": 0,
             "colour": [0,0,0]
              }
-        }
     }
 
 Even with the json standard library only, it might take 10 lines or so to bring that json data into your application,
@@ -133,7 +131,6 @@ dictionary within the class definition - as an example :
 .. code-block:: json
 
     {
-        "__classes__" : {
         "point": {
             "x": 0,
             "y": 0,
@@ -144,7 +141,6 @@ dictionary within the class definition - as an example :
                     "max":100
                     }
                 }
-             }
         }
     }
 
@@ -168,32 +164,30 @@ See Section 6 below for details of the Constrains system and how to extend it by
 **Warning** You must ensure that the default value given for the data attribute is valid based on any constraints defined for that attribute. If the default value is invalid, then the JSON will import successfully, but the class will not be able to be created with it's default values.
 
 
-
 ------------
 
-*Note* : With the AllDictionariesAsClasses set as True - the example JSON used at the top of this README could be
-changed to be as follows :
+*Note* : From v0.0.1a5 onwards the example JSON used at the top of this README could be changed to be as follows :
 
 .. code-block:: json
 
     {
         "__version__":"0.1",
         "__author__":"Tony",
-        "point": {
-            "__doc__": "Example class built from json",
-            "__class_attributes__": {
-                              "_val1": 1,
-                              "_val2": 2
-                            },
-            "x": 0,
-            "y": 0,
-            "colour": [0,0,0]
+        "__classes__":{
+            "point": {
+                "__doc__": "Example class built from json",
+                "__class_attributes__": {
+                                  "_val1": 1,
+                                  "_val2": 2
+                                },
+                "x": 0,
+                "y": 0,
+                "colour": [0,0,0]
+            }
         }
     }
 
-Note the absence of the "__classes__" dictionary. The advantage of this form is that it is more natural form or python,
-although it is impossible to define Module Data Attributes which are dictionaries. It is likely this form will become
-the default setting for the module.
+Note the existance of the "__classes__" dictionary. This form is termed as the explicit form. The advantage of this form is that it is possible to define Module Data Attributes which are dictionaries, something which impossible in the other form of json.
 
 -------------------------
 
@@ -202,11 +196,11 @@ Details
 
 0 Module Configuration
 ----------------------
-The importjson module supports two configuration options, set using ``importjson.configure(<config_item>,<value>``. The config_items supported are :
+The importjson module supports one configuration options, set using ``importjson.configure(<config_item>,<value>``. The config_items supported are :
 
-- AllDictionariesAsClasses : When set True the ``__classes__`` dictionary is not required and  all dictionaries under the JSON top level as translated into classes. Valid values are True and False. The default for this value is current False, but that default maybe True under later versions. If set incorrectly the JSON file will import successfully, but crucially the classes one might expect to exist will not.
+- ``JSONSuffixes`` : A list of valid JSON file name suffixes which are used when searching for potential JSON files to import. The default is [".json"]. Setting this value incorrectly will prevent the library from finding or importing any JSON files - so take care.
 
-- JSONSuffixes : A list of valid JSON file name suffixes which are used when searching for potential JSON files to import. The default is [".json"]. Setting this value incorrectly will prevent the library from finding or importing any JSON files - so take care.
+A previous configuration item ``AllDictionariesAsClasses`` has been rendered obsolete due to changes in ``0.0.1a5`` and a exception is raised if this item is attempted to be used.
 
 1 JSON file structure
 ---------------------
