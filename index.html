@@ -1,0 +1,412 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Py-importjson by TonyFlury</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Py-importjson</h1>
+        <p class="header">Import json data into python as a module, complete with auto creation of classes, class and instance data attributes, __init__ methods and more.</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/TonyFlury/py-importjson/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/TonyFlury/py-importjson/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/TonyFlury/py-importjson">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/TonyFlury">TonyFlury</a></p>
+
+
+      </header>
+      <section>
+        <h1></h1>
+
+<h1>
+<a id="importjson--import-json-data-into-a-python-application" class="anchor" href="#importjson--import-json-data-into-a-python-application" aria-hidden="true"><span class="octicon octicon-link"></span></a>importjson : Import json data into a python application</h1>
+
+<p>It is sometimes useful to be able to use json data to initialise classes and other data structures, giving your application a portable and human readable configuration capability. To do this you will probably write some level of functionality around the json standard library, and use the resulting data loaded from the json file, to populate classes and instances implemented in your application. This separates your data and functionality, which can often present challenges later down the line as you need to keep the data and functionality in step.</p>
+
+<p>It would be better in many cases to be able to combine the data and functionality in a single place, and with the importjson library you can do that. The library allows you to import a json file direct into your python application.
+The library uses the json data to construct a set of classes, complete with class attributes, and instance data attributes (implemented with set and get descriptors). These classes are presented as a fully formed python module - just as if you had written the code yourself.</p>
+
+<h2>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h2>
+
+<p>The json file called classes.json exists in your applications current directory</p>
+
+<p>.. code-block:: json</p>
+
+<pre><code>{
+    "__version__":"0.1",
+    "__author__":"Tony",
+    "point": {
+        "__doc__": "Example class built from json",
+        "__class_attributes__": {
+                          "_val1": 1,
+                          "_val2": 2
+                        },
+        "x": 0,
+        "y": 0,
+        "colour": [0,0,0]
+         }
+}
+</code></pre>
+
+<p>Even with the json standard library only, it might take 10 lines or so to bring that json data into your application,
+and to populate instances of your classes.</p>
+
+<p>With the <code>importjson</code> library you can import this json directly into your application, and create the classes with 2
+lines as demonstrated here in the console</p>
+
+<p>.. code-block:: python</p>
+
+<pre><code>&gt;&gt;&gt; import importjson # Importjson library - must be imported before any json files
+&gt;&gt;&gt; import classes          # Will import classes.json
+</code></pre>
+
+<p>The contents of the ''classes.json'' file have now been translated into module attributes and classes, which can be used just as any other module or class. All the values defined in the json file have been translated into module attributes, classes, class attributes, or data attributes as appropriate (see Details section below for the expected json structure):</p>
+
+<p>.. code-block:: python</p>
+
+<pre><code>&gt;&gt;&gt; # Module attributes
+&gt;&gt;&gt; classes.__author__, classes.__version__
+u'Tony', u'0.1'
+</code></pre>
+
+<p>As per the json implementation in the python standard library, all strings are treated as unicode.</p>
+
+<p><strong>Warning</strong> Because of the way that python implements imports - having classes.json and classes.py in the same directory or package the classes.json will be imported and the classes.py file will be effectively hidden, and cannot be imported.</p>
+
+<p>By default the module has a auto generated documentation string</p>
+
+<p>.. code-block:: python</p>
+
+<pre><code>&gt;&gt;&gt; print classes.__doc__
+Module classes - Created by JSONLoader
+   Original json data : /home/tony/Development/python/importjson/src/classes.json
+   Generated Mon 12 Oct 2015 22:30:54 BST (UTC +0100)
+</code></pre>
+
+<p>The <code>__classes__</code> dictionary in the json file has been converted to one or more classes (in this example the 'point' class) - see the Details section part 3 &amp; 4 for particulars</p>
+
+<p>.. code-block:: python</p>
+
+<pre><code>&gt;&gt;&gt; dir(classes)
+['__builtins__', '__doc__', '__file__', '__json__', '__loader__', '__name__', '__package__', '__version__', '__author__','point']
+</code></pre>
+
+<p>The classes which are created have all the properties you might expect - for instance as defined by the <code>__doc__</code> and the <code>__class__attributes__</code> dictionary in  the json file we can define class data attributes - see Details section 5</p>
+
+<p><strong>Note</strong> : Special module variables :
+From the <code>dir</code> listing above you will see a number of special module variables :</p>
+
+<ul>
+<li>
+<code>__builtins__</code> : as per all modules this is the standard python builtins modules</li>
+<li>
+<code>__doc__</code> : as demonstrated above this is the module documentation string (either the auto generated or defined in the json file.</li>
+<li>
+<code>__file__</code> : this is the full path to the json file</li>
+<li>
+<code>__json__</code> : the original json file imported as a dictionary. It is included for interest only, it should not ever be necessary to use the data in this dictionary (as it has all been converted to the specific module data attributes, classes and other content.</li>
+<li>
+<code>__loader__</code> : This is the custom loader object (which the importjson library implements).</li>
+<li>
+<code>__name__</code> : As with all other modules - this is the fully qualified module name.</li>
+<li>
+<code>__package__</code> : This is False, as the json file cannot ever define a package</li>
+</ul>
+
+<p>The <code>__version__</code> and <code>__author__</code> variables are not special variables - as they are defined by the json file.</p>
+
+<p>.. code-block:: python</p>
+
+<pre><code>&gt;&gt;&gt; classes.point._val1
+1
+&gt;&gt;&gt; classes.point._val2
+2
+&gt;&gt;&gt; classes.point.__doc__
+'Example class built from json'
+</code></pre>
+
+<p>Instances which are created from these classes have the expected Instance data attributes with default values derived from the relevant entries in the json. Instance Data Attributes can be retrieved by name (as expected).</p>
+
+<p>.. code-block:: python</p>
+
+<pre><code>&gt;&gt;&gt; inst = classes.point()
+&gt;&gt;&gt; inst.x, inst.y, inst.colour
+0, 0, [0, 0, 0]
+</code></pre>
+
+<p>The class is generated with a initializer (<code>__init__</code> method) which accepts arguments so the default can be overridden. These arguments are in the same order as the json file.</p>
+
+<p>.. code-block:: python</p>
+
+<pre><code>&gt;&gt;&gt; insta = classes.point(0, 1)
+&gt;&gt;&gt; insta.x, insta.y, insta.colour
+0, 1, [0, 0, 0]
+</code></pre>
+
+<p>Arguments to the initializer can be keyword arguments too - using the same names in the json file.</p>
+
+<p>.. code-block:: python</p>
+
+<pre><code>&gt;&gt;&gt; instb = classes.point(colour=[1,1,1])
+&gt;&gt;&gt; instb.x, instb.y, instb.colour
+0, 0, [1, 1, 1]
+</code></pre>
+
+<p>Instance Data attributes can be changed using the normal dot syntax :</p>
+
+<p>.. code-block:: python</p>
+
+<pre><code>&gt;&gt;&gt; insta.x = 23
+&gt;&gt;&gt; insta.x, insta.y, insta.colour
+23, 0, [0,0,0]
+</code></pre>
+
+<h2>
+<a id="constraints" class="anchor" href="#constraints" aria-hidden="true"><span class="octicon octicon-link"></span></a>Constraints</h2>
+
+<p>It is possible to define constraint criteria for the Instance Data Attributes, by using a <code>__constraints__</code> sub
+dictionary within the class definition - as an example :</p>
+
+<p>.. code-block:: json</p>
+
+<pre><code>{
+    "point": {
+        "x": 0,
+        "y": 0,
+        "__constraints__": {
+            "x":{
+                "type":"int",
+                "min":-100,
+                "max":100
+                }
+            }
+    }
+}
+</code></pre>
+
+<p>This would implement a definition of the <code>x</code> attribute on instances of the <code>point</code> class could only ever be set to
+an integer (or boolean), and must between -100 and 100 inclusive. The allowed criteria are <code>type</code>, <code>min</code> and <code>max</code>.
+<code>type</code> can be any one of <code>list</code>, <code>str</code>, <code>int</code>, <code>float</code>, <code>dict</code> or <code>bool</code>.</p>
+
+<ul>
+<li>A <code>type</code> of <code>float</code> will allow both floats and integer values</li>
+<li>A <code>type</code> of <code>int</code> will allow both integers and booleans values</li>
+<li><p>A <code>type</code> of <code>bool</code> will only allow either True or False values</p></li>
+<li><p>If an attempt is made to set an attribute to a value outside the range defined by <code>min</code> and <code>max</code> the <code>ValueError</code> exception will be raised.</p></li>
+<li><p>If an attempt is made to set an attribute to a value which does not match the type criteria, then a <code>TypeError</code> exception will be raised.</p></li>
+<li><p>All criteria are optional - but an empty constraints section has no effect.</p></li>
+</ul>
+
+<p>See Section 6 below for details of the Constrains system and how to extend it by subclassing.</p>
+
+<p><strong>Warning</strong> You must ensure that the default value given for the data attribute is valid based on any constraints defined for that attribute. If the default value is invalid, then the JSON will import successfully, but the class will not be able to be created with it's default values.</p>
+
+<hr>
+
+<p><em>Note</em> : From v0.0.1a5 onwards the example JSON used at the top of this README could be changed to be as follows :</p>
+
+<p>.. code-block:: json</p>
+
+<pre><code>{
+    "__version__":"0.1",
+    "__author__":"Tony",
+    "__classes__":{
+        "point": {
+            "__doc__": "Example class built from json",
+            "__class_attributes__": {
+                              "_val1": 1,
+                              "_val2": 2
+                            },
+            "x": 0,
+            "y": 0,
+            "colour": [0,0,0]
+        }
+    }
+}
+</code></pre>
+
+<p>Note the existance of the "<strong>classes</strong>" dictionary. This form is termed as the explicit form. The advantage of this form is that it is possible to define Module Data Attributes which are dictionaries, something which impossible in the other form of json.</p>
+
+<hr>
+
+<h1>
+<a id="details" class="anchor" href="#details" aria-hidden="true"><span class="octicon octicon-link"></span></a>Details</h1>
+
+<h2>
+<a id="0-module-configuration" class="anchor" href="#0-module-configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>0 Module Configuration</h2>
+
+<p>The importjson module supports one configuration options, set using <code>importjson.configure(&lt;config_item&gt;,&lt;value&gt;</code>. The config_items supported are :</p>
+
+<ul>
+<li>
+<code>JSONSuffixes</code> : A list of valid JSON file name suffixes which are used when searching for potential JSON files to import. The default is [".json"]. Setting this value incorrectly will prevent the library from finding or importing any JSON files - so take care.</li>
+</ul>
+
+<p>A previous configuration item <code>AllDictionariesAsClasses</code> has been rendered obsolete due to changes in <code>0.0.1a5</code> and a exception is raised if this item is attempted to be used.</p>
+
+<h2>
+<a id="1-json-file-structure" class="anchor" href="#1-json-file-structure" aria-hidden="true"><span class="octicon octicon-link"></span></a>1 JSON file structure</h2>
+
+<p>The json file must be in a specific format :</p>
+
+<p>The Top level of the json file <strong>must</strong> be a directory.</p>
+
+<h2>
+<a id="2-top-level-content" class="anchor" href="#2-top-level-content" aria-hidden="true"><span class="octicon octicon-link"></span></a>2 Top Level content</h2>
+
+<p><strong>All</strong> key, value pairs in the top level are created as module level attributes (see example of <code>__version__</code> above) with the following notes and exceptions:</p>
+
+<ul>
+<li>An optional key of <code>__doc__</code> is found then the value is used as the module documentation string instead of an automatically generated string (example as above <code>classes.__doc__</code> example). While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object.</li>
+<li>If the configuration item AllDictionariesAsClasses is set to False, then an optional key of <code>__classes__</code> which has the value of a dictionary - this dictionary is interpreted as the definition of the classes in this module - see section 3. Any other dictionary under the Top Level JSON is treated as a Module Data Attribute.</li>
+<li>If the configuration item AllDictionariesAsClasses is set to True, then every dictionary under the Top Level is interpreted as the definition of the classes in this module, with the key name as the class name - see section 4.</li>
+</ul>
+
+<h2>
+<a id="3-content-of-__classes__-dictionary" class="anchor" href="#3-content-of-__classes__-dictionary" aria-hidden="true"><span class="octicon octicon-link"></span></a>3 Content of <code>__classes__</code> dictionary</h2>
+
+<p>When the configuration item AllDictionariesAsClasses is set to False, within the <code>__classes__</code> dictionary in the json file, each key,value is a separate class to be created. The key is the class name, and the value must be a dictionary (called the class defining dictionary) - see section 4. An example of this form of JSON file is used above.</p>
+
+<h2>
+<a id="4-content-of-a-class-defining-dictionary" class="anchor" href="#4-content-of-a-class-defining-dictionary" aria-hidden="true"><span class="octicon octicon-link"></span></a>4 Content of a class defining dictionary</h2>
+
+<p>Within the class defining dictionary, each key,value pair is used as instance attributes; the value in the json file is used as the default value for that attribute, and is set as such in the initializer method for the class. This is true for all key,value pairs with the following notes and exceptions:</p>
+
+<ul>
+<li>An optional key of <code>__doc__</code> will set the documentation string for the class - unlike at module level there is no automatically generated documentation string for the class. While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object</li>
+<li>An optional key of <code>__class_attributes__</code> will have the value which is a dictionary : This dictionary defines the names and values of the class data attributes (as opposed to the instance data attributes) - see section 5</li>
+<li>An optional key of <code>__parent__</code> will have a string value which is used as the name of a superclass for this class.</li>
+<li>An optional key <code>__constraints__</code> which will have a dictionary value - and define constrainst to be applied to the value of individual Instance Data Attributes - see section 6</li>
+</ul>
+
+<h2>
+<a id="5-content-of-the-__class_attributes__-dictionary" class="anchor" href="#5-content-of-the-__class_attributes__-dictionary" aria-hidden="true"><span class="octicon octicon-link"></span></a>5 Content of the <code>__class_attributes__</code> dictionary</h2>
+
+<p>Within the <code>__class_attributes__</code> dictionary each key, value pair defines the name and value of a class data attribute. There are no exceptions to this rule at this time.</p>
+
+<h2>
+<a id="6-content-of-the-__constraints__-dictionary" class="anchor" href="#6-content-of-the-__constraints__-dictionary" aria-hidden="true"><span class="octicon octicon-link"></span></a>6 Content of the <code>__constraints__</code> dictionary</h2>
+
+<p>Within the <code>__constraints__</code> dictionary each key is the the name Instance Data attribute, as defined within the class defining dictionary. It is not neccessary for every Instance Data Attribute to be represented by a key in the <code>__constraints__</code> dictionary.</p>
+
+<p>Each key has the value of a dictionary, and this dictionary has zero or more keys within it (every key being optional) :</p>
+
+<ul>
+<li>
+<code>type</code> : Can be used to constrain the type of value allowed for the attribute
+
+<ul>
+<li>
+<code>list</code> : constrains the type to be a list (the values of the items are not restricted)</li>
+<li>
+<code>str</code> : constrains the type to be a string or basestring</li>
+<li>
+<code>int</code>  : constrains the type to be a integer or boolean</li>
+<li>
+<code>float</code>  : constrains the type to be a float or integer</li>
+<li>
+<code>dict</code>  : constrains the type to be a dictionary (keys and values are not restricted)</li>
+<li>
+<code>bool</code> : constrains the type to be boolean (i.e. True or False Only)</li>
+</ul>
+</li>
+<li>
+<code>min</code> : Can be used to constrain the minimum value allowed for the attribute - applied to strings and numeric values only</li>
+<li>
+<code>max</code> : Can be used to constrain the minimum value allowed for the attribute - applied to strings and numeric values only</li>
+</ul>
+
+<p>If an attempt is made to set an attribute to a value outside the range defined by <code>min</code> and <code>max</code> the <code>ValueError</code> exception will be raised. This include setting the value within the Instance initializer.</p>
+
+<p>If an attempt is made to set an attribute to a value which does not match the type criteria, then a <code>TypeError</code> exception will be raised. This includes setting the value within the Instance initializer.</p>
+
+<p>All criteria are optional - an empty constraints section for a given attribute has no effect.</p>
+
+<p><strong>Warning</strong> Since the constraints are applied every time the value is set, including the initializer, you must ensure that the default value given for the data attribute is valid based on any constraints defined for that attribute. If the default value is invalid, then the JSON will import successfully, but the class will not be able to be created with it's default values.</p>
+
+<h2>
+<a id="extending-constraints" class="anchor" href="#extending-constraints" aria-hidden="true"><span class="octicon octicon-link"></span></a>Extending constraints</h2>
+
+<p>The constraints system has been constructed to allow simple extensions. By subclassing the class, and creating a method called <code>_constrain_&lt;attr_name&gt;</code> you can add further tests to the constraints applied to the named attribute. As an example</p>
+
+<p>::</p>
+
+<pre><code>import importjson
+import json_classes # Defines the `classa` class which has Data Instance attribute x
+
+class XMustBeEven(json_classes.classa):
+    def _constrain_x(self, value):
+        value = super(XMustBeEven,self)._constrain_x(value)
+
+        if value % 2 == 0:
+            return value
+        else:
+            raise ValueError("Value Error : x must be an even number")
+
+e = XMustBeEven()
+e.x = 2 # will be fine - no exceptions expected
+e.x = 3
+Value Error : x must be an even number
+</code></pre>
+
+<p>The <code>_constrain_&lt;attr_name&gt;</code> method takes the `<code>value</code> as an argument (this is the attempted new value, not the current value, and must
+either return a value (which will be stored as the value of the attribute, or must raise an Exception (ValueError and TypeError are the norms)</p>
+
+<p>As shown in the example any extension should call the SubClass _constrain method first, as it is that method which applies all of the constrains defined in the JSON file - including any type checks. By allowing the subclass method to execute first, you can be sure that the value returned is the expected type (assuming that the JSON file constrains the type).</p>
+
+<hr>
+
+<h1>
+<a id="notes-and-comments" class="anchor" href="#notes-and-comments" aria-hidden="true"><span class="octicon octicon-link"></span></a>Notes and Comments</h1>
+
+<ol>
+<li>Instance data attributes are actually created with the name prefixed by a <code>_</code>, thus marking the attribute as private. A read/write descriptor is then created with the name as given in the json file.</li>
+<li>If the json defines Instance data attribute with a default value which is a mutable type (list or dictionary), the initializer ensures that changes to the instance are not propagated to other instances. See <a href="http://docs.python-guide.org/en/latest/writing/gotchas/">Common Python Gotchas</a> for a description of this issue. There are no plans to allow this protection to be turned off.</li>
+<li>All strings are imported as Unicode - as can be seen from the <code>__version__</code> example above.</li>
+<li>The module works by creating a python code block which is then compiled into the module and made available to the application. That code block is available for information : .<strong>loader</strong>.get_source(&lt;module_name) - this is NOT the json file. The json file is available through the <code>__file__</code> module attribute, and the imported dictionary can be seen by inspecting <code>__json__</code> module attribute. Under normal circumstance it should not be necessary to use either the json dictionary or the generated code.</li>
+</ol>
+
+<h1>
+<a id="shortcomings" class="anchor" href="#shortcomings" aria-hidden="true"><span class="octicon octicon-link"></span></a>Shortcomings</h1>
+
+<ol>
+<li>It is not possible to use json to define tuples, sets or other complex python data types. json only supports strings, lists, numbers and dictionaries. This is not a limitation of the importjson library, and cannot be fixed easily.</li>
+<li>All instance data attributes are read/write, read_only is not possible in this implementation - see Futures</li>
+<li>It is not possible to set a documentation string for any of the instance data attributes - see Futures</li>
+</ol>
+
+<h1>
+<a id="future" class="anchor" href="#future" aria-hidden="true"><span class="octicon octicon-link"></span></a>Future</h1>
+
+<p>Possible future enhancements :</p>
+
+<ul>
+<li>Read only instance data attributes</li>
+<li>Auto generation of factory methods, using a specific attribute as the key</li>
+<li>Auto generation of human friendly <code>__str__</code> and <code>__repr__</code> functions</li>
+<li>Documentation strings for the Instance Data Attributes</li>
+</ul>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
