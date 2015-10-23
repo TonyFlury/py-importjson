@@ -9,7 +9,7 @@ The library uses the json data to construct a set of classes, complete with clas
 
 Example
 -------
-The json file called classes.json exists in your applications current directory
+The json file called `classes.json` exists in your applications current directory
 
 .. code-block:: json
 
@@ -39,7 +39,7 @@ lines as demonstrated here in the console
     >>> import importjson # Importjson library - must be imported before any json files
     >>> import classes          # Will import classes.json
 
-The contents of the ''classes.json'' file have now been translated into module attributes and classes, which can be used just as any other module or class. All the values defined in the json file have been translated into module attributes, classes, class attributes, or data attributes as appropriate (see Details section below for the expected json structure):
+The contents of the 'classes.json` file have now been translated into module attributes and classes, which can be used just as any other module or class. All the values defined in the json file have been translated into module attributes, classes, class attributes, or data attributes as appropriate (see Details section below for the expected json structure):
 
 .. code-block:: python
 
@@ -49,7 +49,13 @@ The contents of the ''classes.json'' file have now been translated into module a
 
 As per the json implementation in the python standard library, all strings are treated as unicode.
 
-**Warning** Because of the way that python implements imports - having classes.json and classes.py in the same directory or package the classes.json will be imported and the classes.py file will be effectively hidden, and cannot be imported.
++--------------------------------------------------------------------------------------------------------------------+
+|                                                **Warning**                                                         |
++====================================================================================================================+
+| Because of the way that python implements imports - having classes.json and classes.py in the same directory or    |
+| package the classes.json will be imported and the classes.py file will be effectively hidden, and cannot be        |
+| imported. This will cause unexpected behaviour unless you are careful about your file naming.                      |
++--------------------------------------------------------------------------------------------------------------------+
 
 By default the module has a auto generated documentation string
 
@@ -71,6 +77,7 @@ The classes which are created have all the properties you might expect - for ins
 
 **Note** : Special module variables :
 From the ``dir`` listing above you will see a number of special module variables :
+
  - ``__builtins__`` : as per all modules this is the standard python builtins modules
  - ``__doc__`` : as demonstrated above this is the module documentation string (either the auto generated or defined in the json file.
  - ``__file__`` : this is the full path to the json file
@@ -157,14 +164,19 @@ an integer (or boolean), and must between -100 and 100 inclusive. The allowed cr
 
  - If an attempt is made to set an attribute to a value which does not match the type criteria, then a ``TypeError`` exception will be raised.
 
- - All criteria are optional - but an empty constraints section has no effect.
+ - All criteria are optional - but an empty or missing constraints section has no effect.
 
 See Section 6 below for details of the Constrains system and how to extend it by subclassing.
 
-**Warning** You must ensure that the default value given for the data attribute is valid based on any constraints defined for that attribute. If the default value is invalid, then the JSON will import successfully, but the class will not be able to be created with it's default values.
++--------------------------------------------------------------------------------------------------------------------+
+|                                                       **Warning**                                                  |
++====================================================================================================================+
+| You must ensure that the default value given for the data attribute is valid based on any constraints defined for  |
+| that attribute. If the default value is invalid, then the JSON will import successfully, but the class will not be |
+| able to be created with it's default values.                                                                       |
++--------------------------------------------------------------------------------------------------------------------+
 
-
-------------
+----
 
 *Note* : From v0.0.1a5 onwards the example JSON used at the top of this README could be changed to be as follows :
 
@@ -196,7 +208,7 @@ Details
 
 0 Module Configuration
 ----------------------
-The importjson module supports one configuration options, set using ``importjson.configure(<config_item>,<value>``. The config_items supported are :
+The importjson module supports one configuration options, set using ``importjson.configure(<config_item>,<value>)``. The config_items supported are :
 
 - ``JSONSuffixes`` : A list of valid JSON file name suffixes which are used when searching for potential JSON files to import. The default is [".json"]. Setting this value incorrectly will prevent the library from finding or importing any JSON files - so take care.
 
@@ -229,13 +241,14 @@ Within the class defining dictionary, each key,value pair is used as instance at
 
 5 Content of the ``__class_attributes__`` dictionary
 ----------------------------------------------------
-Within the ``__class_attributes__`` dictionary each key, value pair defines the name and value of a class data attribute. There are no exceptions to this rule at this time.
+Within the ``__class_attributes__`` dictionary each key, value pair defines the name and value of a class data attribute. There are no exceptions to this rule.
 
 6 Content of the ``__constraints__`` dictionary
 -----------------------------------------------
 Within the ``__constraints__`` dictionary each key is the the name Instance Data attribute, as defined within the class defining dictionary. It is not neccessary for every Instance Data Attribute to be represented by a key in the ``__constraints__`` dictionary.
 
 Each key has the value of a dictionary, and this dictionary has zero or more keys within it (every key being optional) :
+
 - ``type`` : Can be used to constrain the type of value allowed for the attribute
   - ``list`` : constrains the type to be a list (the values of the items are not restricted)
   - ``str`` : constrains the type to be a string or basestring
@@ -245,7 +258,6 @@ Each key has the value of a dictionary, and this dictionary has zero or more key
   - ``bool`` : constrains the type to be boolean (i.e. True or False Only)
 - ``min`` : Can be used to constrain the minimum value allowed for the attribute - applied to strings and numeric values only
 - ``max`` : Can be used to constrain the minimum value allowed for the attribute - applied to strings and numeric values only
-
 
 If an attempt is made to set an attribute to a value outside the range defined by ``min`` and ``max`` the ``ValueError`` exception will be raised. This include setting the value within the Instance initializer.
 
@@ -259,7 +271,7 @@ Extending constraints
 ---------------------
 The constraints system has been constructed to allow simple extensions. By subclassing the class, and creating a method called ``_constrain_<attr_name>`` you can add further tests to the constraints applied to the named attribute. As an example
 
-::
+.. code-block:: python
 
     import importjson
     import json_classes # Defines the `classa` class which has Data Instance attribute x
@@ -278,19 +290,19 @@ The constraints system has been constructed to allow simple extensions. By subcl
     e.x = 3
     Value Error : x must be an even number
 
-The ``_constrain_<attr_name>`` method takes the ``value` as an argument (this is the attempted new value, not the current value, and must
+The ``_constrain_<attr_name>`` method takes the ``value`` as an argument (this is the attempted new value, not the current value, and must
 either return a value (which will be stored as the value of the attribute, or must raise an Exception (ValueError and TypeError are the norms)
 
-As shown in the example any extension should call the SubClass _constrain method first, as it is that method which applies all of the constrains defined in the JSON file - including any type checks. By allowing the subclass method to execute first, you can be sure that the value returned is the expected type (assuming that the JSON file constrains the type).
+As shown in the example any extension should call the ``<super class> _constrain method`` first, as it is that method which applies all of the constrains defined in the JSON file - including any type checks. By allowing the superclass method to execute first, you can be sure that the value returned is the expected type (assuming that the JSON file constrains the type).
 
 -------------------------------
 
 Notes and Comments
 ==================
 1. Instance data attributes are actually created with the name prefixed by a ``_``, thus marking the attribute as private. A read/write descriptor is then created with the name as given in the json file.
-2. If the json defines Instance data attribute with a default value which is a mutable type (list or dictionary), the initializer ensures that changes to the instance are not propagated to other instances. See [Common Python Gotchas](http://docs.python-guide.org/en/latest/writing/gotchas/) for a description of this issue. There are no plans to allow this protection to be turned off.
+2. If the json defines Instance data attribute with a default value which is a mutable type (list or dictionary), the initializer ensures that changes to the instance are not propagated to other instances. See `Common Python Gotchas <http://docs.python-guide.org/en/latest/writing/gotchas/>`_ for a description of this issue. There are no plans to allow this protection to be turned off.
 3. All strings are imported as Unicode - as can be seen from the ``__version__`` example above.
-4. The module works by creating a python code block which is then compiled into the module and made available to the application. That code block is available for information : <module>.__loader__.get_source(<module_name) - this is NOT the json file. The json file is available through the ``__file__`` module attribute, and the imported dictionary can be seen by inspecting ``__json__`` module attribute. Under normal circumstance it should not be necessary to use either the json dictionary or the generated code.
+4. The module works by creating a python code block which is then compiled into the module and made available to the application. That code block is available for information : ``<module>.__loader__.get_source(<module_name)`` - while the json file is available through the ``__file__`` module attribute, and the imported dictionary can be seen by inspecting ``__json__`` module attribute. Under normal circumstance it should not be necessary to use either the json dictionary or the generated code.
 
 Shortcomings
 ============
@@ -305,3 +317,4 @@ Possible future enhancements :
  - Auto generation of factory methods, using a specific attribute as the key
  - Auto generation of human friendly ``__str__`` and ``__repr__`` functions
  - Documentation strings for the Instance Data Attributes
+ - Allow Data Instance Attributes to have a non builtin type.
