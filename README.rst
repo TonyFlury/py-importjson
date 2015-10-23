@@ -211,13 +211,13 @@ The Top level of the json file **must** be a directory.
 2 Top Level content
 -------------------
 **All** key, value pairs in the top level are created as module level attributes (see example of ``__version__`` above) with the following notes and exceptions:
- - An optional key of ``__doc__`` is found then the value is used as the module documentation string instead of an automatically generated string (example as above ``classes.__doc__`` example). While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object.
- - If the configuration item AllDictionariesAsClasses is set to False, then an optional key of ``__classes__`` which has the value of a dictionary - this dictionary is interpreted as the definition of the classes in this module - see section 3. Any other dictionary under the Top Level JSON is treated as a Module Data Attribute.
- - If the configuration item AllDictionariesAsClasses is set to True, then every dictionary under the Top Level is interpreted as the definition of the classes in this module, with the key name as the class name - see section 4.
+ - An optional key of ``__doc__`` is found then the value is used as the module documentation string instead of an automatically generated string. While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object.
+ - If an optional key of ``__classes__`` exists then this dictionary is interpreted as the definition of the classes in this module - see section 3. Any in this case any other dictionary under the Top Level JSON is treated as a Module Data Attribute.
+ - If an optional key of ``__classes__`` does not exists then all dictionaries under the Top Level areas the definition of the classes in this module - see section 4. Any in this case it is not possible to define a Module Data Attribute with a dictionary value.
 
 3 Content of ``__classes__`` dictionary
 ---------------------------------------
-When the configuration item AllDictionariesAsClasses is set to False, within the ``__classes__`` dictionary in the json file, each key,value is a separate class to be created. The key is the class name, and the value must be a dictionary (called the class defining dictionary) - see section 4. An example of this form of JSON file is used above.
+When the ``__classes__`` dictionary exists in the json file, each key,value within that dictionary is a separate class to be created. The key is the class name, and the value must be a dictionary (called the class defining dictionary) - see section 4. An example of this form of JSON file is used above.
 
 4 Content of a class defining dictionary
 ----------------------------------------
