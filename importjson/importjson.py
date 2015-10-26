@@ -18,22 +18,6 @@ Testable Statements :
     Are instance initialisation methods created
     Are instance attribute property methods created
 """
-
-# --------------------------------------------------------------------
-#                                Change Log
-# Version 0.0.1a3
-#       Implemented configuration method & Dictionary
-#       Implement AllDictionaryAsClasses config items
-#       Implement __constraints__ section for numerics
-#       Implement type checking within __constraints section
-#
-# Version 0.0.1a2
-#       Bug fix #1 - Need to search sys.path when looking for a top level module
-#       Bug fix #2 - Arguments are passed down to parent class correctly
-# Version 0.0.1a1
-#       Initial version.
-# ---------------------------------------------------------------------
-
 import sys
 import os
 import imp
@@ -43,14 +27,15 @@ import datetime
 import time
 import copy
 
-import version
+import version, changelog
 
 __version__ = version.__version__
+__changes__ = changelog.__change_log__
+
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '11 Oct 2015'
 
 __configuration__ = {"JSONSuffixes": [".json"]}
-
 __obsolete__ = {"AllDictionariesAsClasses":"No longer required - the different forms of json are automatically recognised"}
 
 def configure(key, value):
@@ -119,7 +104,7 @@ class JSONLoader(object):
         return ca
 
     # noinspection PyMethodMayBeStatic
-    def _methods(self, cls_dict, mod_name, cls_name):
+    def _methods(self, cls_dict, mod_name, cls_name, cls_list):
         """Create all the instance methods (__init__ and properties)"""
         mc = ""
         ignore = ["__doc__", "__class_attributes__", "__constraints__"]
@@ -128,6 +113,7 @@ class JSONLoader(object):
             raise ImportError("Unable to Import : Expecting dictionary for instance attributes for {} class".format(
                 cls_name))
 
+        # Build the __init__ argument list - make sure we don't have mutable arguments
         al = [
             "{}={}".format(var, repr(value) if not isinstance(value, (list, dict)) else "None")
             for var, value in cls_dict.iteritems() if var not in ignore]
@@ -150,26 +136,41 @@ class JSONLoader(object):
         mc += "        super({}, self).__init__(*args, **kwargs)\n".format(cls_name)
 
         mc += """
-    def __constrain(self, attr_name, value):
-        \"\"\"Checks the constraints for this attribute\"\"\"
+    def _get_constraints(self, attr_name):
         if not isinstance(self._constraints, dict):
-            return value
+            return None
 
         if attr_name not in self._constraints:
+            return None
+
+        if isinstance(self._constraints[attr_name], dict):
+            return self._constraints[attr_name]
+        else:
+            return None
+
+    def __constrain(self, attr_name, value):
+        \"\"\"Checks the constraints for this attribute\"\"\"
+
+        cons = self._get_constraints(attr_name)
+        if not cons:
             return value
 
-        cons = self._constraints[attr_name]
-        if not isinstance(cons, dict):
+        if cons.get("not_none", False) and value is None:
+            raise ValueError("Range Error : '{{attr_name}}' cannot be None".format(
+                        attr_name=attr_name ))
+
+        if value is None:
             return value
 
         if "type" in cons:
-            if not isinstance(value, {"bool":(bool,int), "str":(str,basestring),
+            if not isinstance(value, {{"bool":(bool,int), "str":(str,basestring),
                                       "list":list,"int":int,
-                                      "float":(float,int), "dict":dict}[cons["type"]]):
-                raise TypeError(" Type Error : '{attr_name}' must be of {type} type : {val} given".format(
-                        attr_name=attr_name,
-                        type = cons["type"],
-                        val = repr(value) ))
+                                      "float":(float,int), "dict":dict,
+                                      {class_list} }}[cons["type"]]):
+                raise TypeError(" Type Error : Attribute '{{attr_name}}' must be of type {{type}} : {{type_name}} given".format(
+                            attr_name=attr_name,
+                            type = cons["type"],
+                            type_name = type(value).__name__ ))
 
         # Don't apply min and max to dictionaries or lists
         if isinstance(value,(dict,list)):
@@ -179,31 +180,33 @@ class JSONLoader(object):
             if cons["min"] <= value <= cons["max"]:
                 return value
             else:
-                raise ValueError("Range Error : '{attr_name}' must be between {min} and {max}".format(
-                        attr_name=attr_name,
-                        min=cons["min"],
-                        max=cons["max"] ))
+                raise ValueError("Range Error : '{{attr_name}}' must be between {{min}} and {{max}}".format(
+                            attr_name=attr_name,
+                            min=cons["min"],
+                            max=cons["max"] ))
 
         if "min" in cons :
             if cons["min"] <= value:
                 return value
             else:
-                raise ValueError("Range Error : '{attr_name}' must be >= {min}".format(
-                        attr_name=attr_name,
-                        min=cons["min"] ))
+                raise ValueError("Range Error : '{{attr_name}}' must be >= {{min}}".format(
+                            attr_name=attr_name,
+                            min=cons["min"] ))
 
         if "max" in cons :
             if value <= cons["max"] :
                 return value
             else:
-                raise ValueError("Range Error : '{attr_name}' must be <= {max}".format(
+                raise ValueError("Range Error : '{{attr_name}}' must be <= {{max}}".format(
                         attr_name=attr_name,
                         max=cons["max"] ))
 
         return value
-    """
-        ptemplate = """
+    """.format(class_list =
+               ",".join(["'{0}':{0}".format(cls) for cls in cls_list])
+               )
 
+        ptemplate = """
     def _constrain_{attr_name}(self, value):
         return self.__constrain('{attr_name}', value)
 
@@ -214,8 +217,12 @@ class JSONLoader(object):
 
     @{attr_name}.setter
     def {attr_name}(self, value):
+        cons = self._get_constraints(attr_name='{attr_name}' )
+        if cons and cons.get("read_only",False):
+            raise ValueError("Range Error : '{attr_name}' is read_only")
+
         try:
-            nv = self._constrain_{attr_name}(value)
+            nv = self._constrain_{attr_name}(value )
         except:
             raise
         else:
@@ -226,7 +233,7 @@ class JSONLoader(object):
 
         return mc
 
-    def _create_class(self, cls_name, cls_dict, mod_name):
+    def _create_class(self, cls_name, cls_dict, mod_name, cls_list):
         """ Create a class definition for the given class"""
         if not isinstance(cls_dict, dict):
             raise ImportError("Expecting dictionary for a class")
@@ -261,16 +268,16 @@ class JSONLoader(object):
             return cls_def
 
         # Generate __init__ method and properties
-        cls_def += self._methods(cls_dict=working_copy, mod_name=mod_name, cls_name=cls_name)
+        cls_def += self._methods(cls_dict=working_copy, mod_name=mod_name, cls_name=cls_name, cls_list=cls_list)
 
         return cls_def
 
-    def _create_classes(self, classes_dict, mod_name):
+    def _create_classes(self, classes_dict, mod_name, cls_list):
         """Take the __classes dictionary, and create one class per instance"""
         cc = ""
         assert isinstance(classes_dict, dict)
         for cls in classes_dict:
-            cc += self._create_class(cls_name=cls, cls_dict=classes_dict[cls], mod_name=mod_name)
+            cc += self._create_class(cls_name=cls, cls_dict=classes_dict[cls], mod_name=mod_name, cls_list=cls_list)
         return cc
 
     def is_package(self, mod_name):
@@ -324,6 +331,11 @@ class JSONLoader(object):
         # Do we have Explicit or implicit classes
         implicit = False if "__classes__" in json_dict else True
 
+        if implicit:
+            cls_list = [key for key in json_dict if isinstance(json_dict[key],dict)]
+        else:
+            cls_list = [key for key in json_dict if isinstance(json_dict["__classes__"][key],dict)]
+
         # Scan through the dictionary - taking specials into account
         for key in json_dict:
 
@@ -334,7 +346,7 @@ class JSONLoader(object):
             if not implicit :
                 if key == "__classes__":
                     if isinstance(json_dict[key], dict):
-                        mod_code += self._create_classes(classes_dict=json_dict[key], mod_name=mod_name)
+                        mod_code += self._create_classes(classes_dict=json_dict[key], mod_name=mod_name, cls_list=cls_list)
                     else:
                         raise ImportError("Unable to Import : classes must be defined as json dictionaries {}".format(
                             JSONLoader._found_modules[mod_name]))
@@ -343,7 +355,7 @@ class JSONLoader(object):
                     mod_code += "{} = {}\n".format(key, self.dictrepr(json_dict[key]))
             else:
                 if isinstance(json_dict[key], dict):
-                    mod_code += self._create_class(cls_name=key, cls_dict=json_dict[key], mod_name=mod_name)
+                    mod_code += self._create_class(cls_name=key, cls_dict=json_dict[key], mod_name=mod_name,cls_list=cls_list)
                 else:
                     # Everything else is treated as a module level attribute
                     mod_code += "{} = {}\n".format(key, self.dictrepr(json_dict[key]))
