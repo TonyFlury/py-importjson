@@ -26,8 +26,8 @@ from collections import OrderedDict
 import datetime
 import time
 import copy
-
-import version, changelog
+import version
+import changelog
 
 __version__ = version.__version__
 __changes__ = changelog.__change_log__
@@ -36,11 +36,13 @@ __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '11 Oct 2015'
 
 __configuration__ = {"JSONSuffixes": [".json"]}
-__obsolete__ = {"AllDictionariesAsClasses":"No longer required - the different forms of json are automatically recognised"}
+__obsolete__ = {"AllDictionariesAsClasses":
+                    "No longer required - the different forms of json are automatically recognised"}
+
 
 def configure(key, value):
     if key in __obsolete__:
-        raise ValueError("Obsolete Configuration : {} : {}".format(key,__obsolete__[key]))
+        raise ValueError("Obsolete Configuration : {} : {}".format(key, __obsolete__[key]))
 
     if key not in __configuration__:
         raise ValueError("Unknown Configuration Item : {}".format(key))
@@ -48,8 +50,11 @@ def configure(key, value):
         __configuration__[key] = value
 
 
-def get_configure(key):
-    return __configuration__[key]
+def get_configure(key, default=None):
+    if key not in __configuration__:
+        raise ValueError("Unknown Configuration Item {}".format(key))
+
+    return __configuration__.get(key, default)
 
 
 class JSONLoader(object):
@@ -71,11 +76,8 @@ class JSONLoader(object):
         mod_name = fullname.split(".")[-1]
 
         for p in path:
-            for suff in __configuration__.get("JSONSuffixes", ".json"):
+            for suff in get_configure("JSONSuffixes", default=[".json"]):
                 yield os.path.join(p, mod_name) + suff
-
-    def __str__(self):
-        return "<JSONLoader instance >"
 
     def find_module(self, fullname, path=None):
         """Identify if the module is potentially a json file
@@ -95,6 +97,7 @@ class JSONLoader(object):
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def _class_attributes(self, data_dict, mod_name, cls_name):
         """ Generate relevant code for any class attributes"""
+
         if not isinstance(data_dict, dict):
             raise ImportError("Invalid json : __class_attributes__ must be a dictionary for {} class".format(cls_name))
 
@@ -109,6 +112,8 @@ class JSONLoader(object):
         mc = ""
         ignore = ["__doc__", "__class_attributes__", "__constraints__"]
 
+        # Essentially unreachable - this argument can never be anything other than a dictionary
+        # See how it is invoked from _create_class
         if not isinstance(cls_dict, dict):
             raise ImportError("Unable to Import : Expecting dictionary for instance attributes for {} class".format(
                 cls_name))
@@ -149,7 +154,7 @@ class JSONLoader(object):
             return None
 
     def __constrain(self, attr_name, value):
-        \"\"\"Checks the constraints for this attribute\"\"\"
+        \"\"\"Checks the constraints for the given attribute\"\"\"
 
         cons = self._get_constraints(attr_name)
         if not cons:
@@ -202,8 +207,7 @@ class JSONLoader(object):
                         max=cons["max"] ))
 
         return value
-    """.format(class_list =
-               ",".join(["'{0}':{0}".format(cls) for cls in cls_list])
+    """.format(class_list=",".join(["'{0}':{0}".format(cls) for cls in cls_list])
                )
 
         ptemplate = """
@@ -240,37 +244,40 @@ class JSONLoader(object):
 
         working_copy = copy.deepcopy(cls_dict)
 
-        cls_def = ""
+        cls_head = ""
 
         # Class definition
-        cls_def += "\n\nclass {} ({}):\n".format(cls_name, working_copy.get("__parent__", "object"))
+        cls_head += "\n\nclass {} ({}):\n".format(cls_name, working_copy.get("__parent__", "object"))
         if "__parent__" in working_copy:
             del working_copy["__parent__"]
 
         # Documentation string - special case item
-        cls_def += '    """{}"""\n'.format(working_copy["__doc__"]) if "__doc__" in working_copy else ""
-        if "docstring" in working_copy:
+        cls_head += '    """{}"""\n'.format(working_copy["__doc__"]) if "__doc__" in working_copy else ""
+        if "__doc__" in working_copy:
             del working_copy["__doc__"]
 
         # Generate a pass if there is nothing left to generate
         if not working_copy:
-            cls_def += "    pass\n"
-            return cls_def
+            cls_head += "    pass\n"
+            return cls_head
 
+        cls_body = ""
         # Class attributes - special case item
-        cls_def += self._class_attributes(working_copy["__class_attributes__"], mod_name, cls_name) \
+        cls_body += self._class_attributes(working_copy["__class_attributes__"], mod_name, cls_name) \
             if "__class_attributes__" in working_copy else ""
         if "__class_attributes__" in working_copy:
             del working_copy["__class_attributes__"]
 
         # Exit function now if nothing left in this class
         if not working_copy:
-            return cls_def
+            return cls_head + cls_body
 
         # Generate __init__ method and properties
-        cls_def += self._methods(cls_dict=working_copy, mod_name=mod_name, cls_name=cls_name, cls_list=cls_list)
+        cls_body += self._methods(cls_dict=working_copy, mod_name=mod_name, cls_name=cls_name, cls_list=cls_list)
 
-        return cls_def
+        cls_body += "        pass" if not cls_body else ""
+
+        return cls_head + cls_body
 
     def _create_classes(self, classes_dict, mod_name, cls_list):
         """Take the __classes dictionary, and create one class per instance"""
@@ -327,14 +334,13 @@ class JSONLoader(object):
                                                          time.strftime("%Z (UTC %z)")
                                                          )
 
-
         # Do we have Explicit or implicit classes
-        implicit = False if "__classes__" in json_dict else True
+        implicit = "__classes__" not in json_dict
 
         if implicit:
-            cls_list = [key for key in json_dict if isinstance(json_dict[key],dict)]
+            cls_list = [key for key in json_dict if isinstance(json_dict[key], dict)]
         else:
-            cls_list = [key for key in json_dict if isinstance(json_dict["__classes__"][key],dict)]
+            cls_list = [key for key in json_dict["__classes__"] if isinstance(json_dict["__classes__"][key], dict)]
 
         # Scan through the dictionary - taking specials into account
         for key in json_dict:
@@ -343,10 +349,11 @@ class JSONLoader(object):
             if key == "__doc__":
                 continue
 
-            if not implicit :
+            if not implicit:
                 if key == "__classes__":
                     if isinstance(json_dict[key], dict):
-                        mod_code += self._create_classes(classes_dict=json_dict[key], mod_name=mod_name, cls_list=cls_list)
+                        mod_code += self._create_classes(classes_dict=json_dict[key], mod_name=mod_name,
+                                                         cls_list=cls_list)
                     else:
                         raise ImportError("Unable to Import : classes must be defined as json dictionaries {}".format(
                             JSONLoader._found_modules[mod_name]))
@@ -355,7 +362,8 @@ class JSONLoader(object):
                     mod_code += "{} = {}\n".format(key, self.dictrepr(json_dict[key]))
             else:
                 if isinstance(json_dict[key], dict):
-                    mod_code += self._create_class(cls_name=key, cls_dict=json_dict[key], mod_name=mod_name,cls_list=cls_list)
+                    mod_code += self._create_class(cls_name=key, cls_dict=json_dict[key], mod_name=mod_name,
+                                                   cls_list=cls_list)
                 else:
                     # Everything else is treated as a module level attribute
                     mod_code += "{} = {}\n".format(key, self.dictrepr(json_dict[key]))
@@ -374,9 +382,11 @@ class JSONLoader(object):
     def load_module(self, fullname):
         """Load the module - using the json file already found"""
 
+        # Not sure this could ever be true - why would this loader be invoked to reload a module which it hasn't loaded
         if fullname not in JSONLoader._found_modules:
             raise ImportError("Unable to import : Cannot find module")
 
+        # Check whether module is already installed - and reload
         if fullname in sys.modules:
             mod = sys.modules[fullname]
             mod.__name__ = fullname
@@ -391,8 +401,6 @@ class JSONLoader(object):
         # noinspection PyUnusedLocal
         try:
             mod_code = self.get_source(mod.__name__)
-
-            #            print mod_code
 
             exec mod_code in mod.__dict__  # Compile the code into the modules
 

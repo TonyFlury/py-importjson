@@ -1,6 +1,6 @@
-=====================================================
+===================
 importjson examples
-=====================================================
+===================
 
 The examples directory contains a number of json files and the auto generated python code that the importjson library will create for that json file. The created python files are included to demonstrate the functionality : when using the importjson library it is not necessary to use any other generated code, the library creates the code automatically when the json file is imported.
 

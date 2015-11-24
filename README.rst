@@ -7,6 +7,16 @@ It is sometimes useful to be able to use json data to initialise classes and oth
 It would be better in many cases to be able to combine the data and functionality in a single place, and with the importjson library you can do that. The library allows you to import a json file direct into your python application.
 The library uses the json data to construct a set of classes, complete with class attributes, and instance data attributes (implemented with set and get descriptors). These classes are presented as a fully formed python module - just as if you had written the code yourself.
 
++--------------------------------------------------------------------------------+
+|                            *Bugs*                                              |
++================================================================================+
+| Every care is taken to try to ensure that this code comes to you bug free.     |
+| If you do find an error - please report the problem on :                       |
+| `GitHub <https://github.com/TonyFlury/py-importjson/issues/new>`_              |
+| or                                                                             |
+| by email to : `Tony Flury <mailto:anthony.flury?Subject=ImportJson%20Error>`_  |
++--------------------------------------------------------------------------------+
+
 Example
 -------
 The json file called `classes.json` exists in your applications current directory
@@ -240,7 +250,7 @@ Within the class defining dictionary, each key,value pair is used as instance at
  - An optional key of ``__doc__`` will set the documentation string for the class - unlike at module level there is no automatically generated documentation string for the class. While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object
  - An optional key of ``__class_attributes__`` will have the value which is a dictionary : This dictionary defines the names and values of the class data attributes (as opposed to the instance data attributes) - see section 5
  - An optional key of ``__parent__`` will have a string value which is used as the name of a superclass for this class.
- - An optional key ``__constraints__`` which will have a dictionary value - and define constrainst to be applied to the value of individual Instance Data Attributes - see section 6
+ - An optional key ``__constraints__`` which will have a dictionary value - and define constraint to be applied to the value of individual Instance Data Attributes - see section 6
 
 5 Content of the ``__class_attributes__`` dictionary
 ----------------------------------------------------
@@ -276,9 +286,9 @@ If an attempt is made to set an attribute to None when ``not_none`` is set to Tr
 
 All criteria are optional - an empty or missing constraints section for a given attribute has no effect.
 
-+======================================================================================================+
-|                                       **Warning**                                                    |
 +------------------------------------------------------------------------------------------------------+
+|                                       **Warning**                                                    |
++======================================================================================================+
 | Since the constraints are applied every time the value is set, including the initializer, you must   |
 | ensure that the default value given for the data attribute is valid based on any constraints defined |
 | for that attribute. If the default value is invalid, then the JSON will import successfully, but the |

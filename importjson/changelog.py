@@ -1,22 +1,12 @@
-#!/usr/bin/env python
-"""
-# importjson : Implementation of changelog.py
-
-Summary : 
-    <summary of module/class being implemented>
-Use Case : 
-    As a <actor> I want <outcome> So that <justification>
-
-Testable Statements :
-    Can I <Boolean statement>
-    ....
-"""
-
 __change_log__ = """
 -------------
                                 Change Log
  Version 0.0.1a7 (tba)
-
+        Issue 6 : Implemented ability to constrain type of Instance Attribute to be one of the classes in the module.
+        Issue 4 : Implemented "read_only"
+        Issue 5 : Implemented "not_none"
+        Corrected Readme so that table render correctly on github & pyPI (github pages still an issue).
+        Added more unit tests : now at 99% coverage (1 line unreached - 159 total)
 
  Version 0.0.1a6 (13th Oct 2015)
         Corrected some errors in the Readme - no functional change
@@ -45,5 +35,3 @@ __change_log__ = """
  Version 0.0.1a1 (15th Oct 2015)
        Initial version.
 """
-
-

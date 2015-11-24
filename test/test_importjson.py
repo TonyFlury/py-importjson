@@ -13,6 +13,8 @@ Testable Statements :
 """
 import unittest
 from TempDirectoryContext import TempDirectoryContext as TestDirCont
+from random import sample
+from string import lowercase
 import sys
 import importlib
 import importjson
@@ -47,130 +49,343 @@ class Installation(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_00_001_HookAppend(self):
+    def test_000_001_HookAppend(self):
         """Confirm that the Hook is correctly appended"""
         self.assertEqual(isinstance(sys.meta_path[-1], importjson.importjson.JSONLoader), True)
 
-    def test_00_002_Version(self):
+    def test_000_002_Version(self):
         """Confirm correct version - expecting 0.0.1a1 or better"""
         self.assertTrue(cmp_version(importjson.version.__version__, "0.0.1a1") > 0)
 
-    @unittest.skipIf(cmp_version(importjson.version.__version__ ,"0.0.1a5") < 0,"Only gives exception on v0.0.1a5 or higher")
-    def test_00_010_configuration(self):
+    @unittest.skipIf(cmp_version(importjson.version.__version__, "0.0.1a5") < 0,
+                     "Only gives exception on v0.0.1a5 or higher")
+    def test_000_010_configurationObsolete(self):
+        """Test obsolete config item - will only be tested when v0.01a5"""
+        with self.assertRaises(ValueError) as cm:
+            importjson.configure("AllDictionariesAsClasses", True)
+            print cm.exception
+
+    def test_000_010_configurationValid(self):
+        """Test obsolete config item"""
+        importjson.configure("JSONSuffixes", [".JSON"])
+        self.assertEqual(importjson.get_configure("JSONSuffixes"), [".JSON"])
+
+        importjson.configure("JSONSuffixes", [".json"])
+
+    def test_000_010_configurationInvalid(self):
+        """Test unknown config item"""
         with self.assertRaises(ValueError):
-            importjson.configure("AllDictionariesAreClasses",True)
+            importjson.configure("InvalidConfig", True)
+
+        with self.assertRaises(ValueError):
+            importjson.get_configure("InvalidConfig")
+
 
 class ModuleContentTest(unittest.TestCase):
-    @staticmethod
-    def write_module_json(json_str):
-        if "test_module" in sys.modules:
-            del sys.modules["test_modules"]
-
-        with TestDirCont() as tempd:
-            sys.path.append(tempd)
-            with open(os.path.join(tempd, "test_module.json"), "w") as json_fp:
-                json_fp.write(json_str)
-
-        return importlib.import_module("test_module")
-
-
-class ModuleAttributes(ModuleContentTest):
     def setUp(self):
-        self.tm = None
+        self.tm, self.mod_name = None, None
 
     def tearDown(self):
         del sys.path[-1]
         if self.tm:
             del sys.modules[self.tm.__name__]
 
-    def test_01_000a_SimpleJsonInt(self):
-        """Import module with single Int value"""
+    _module_name = set()
 
-        self.tm = self.write_module_json("""
+    @staticmethod
+    def _random_name():
+        """Generate previously unused random name"""
+        name = "".join("".join(sample(lowercase, 7)))
+        while name in ModuleContentTest._module_name:
+            name = "".join("".join(sample(lowercase, 7)))
+        return name
+
+    def createModule(self, json_str, perm_error=False):
+        """Generate a json file in a random file in a random directory - and then import it
+
+            :param json_str : The json to write to the file
+            :param perm_error : A boolean - whether there is to be an perm_error in this module - i.e. wrong permissions
+        """
+        with TestDirCont() as tempd:
+            sys.path.append(tempd)
+            self.mod_name = ModuleContentTest._random_name()
+            self.path = os.path.join(tempd, self.mod_name + ".json")
+            with open(self.path, "w") as json_fp:
+                json_fp.write(json_str)
+
+            if perm_error:
+                os.chmod(self.path, 0o200)
+
+        self.tm = importlib.import_module(self.mod_name)
+
+
+class ModuleData(ModuleContentTest):
+    def setUp(self):
+        super(ModuleData, self).setUp()
+
+    def tearDown(self):
+        super(ModuleData, self).tearDown()
+
+    def test_010_000_BasicModuleName(self):
+        """Import module and check module name"""
+
+        self.createModule("""
+{
+    "test_value":0
+}""")
+        self.assertEqual(self.tm.__name__, self.mod_name)
+
+    def test_010_001_BasicModulePath(self):
+        """Import module and check module path"""
+
+        self.createModule("""
+{
+    "test_value":0
+}""")
+        self.assertEqual(self.tm.__file__, self.path)
+
+    def test_010_002_BasicModulePackage(self):
+        """Import module and check module package flag"""
+
+        self.createModule("""
+{
+    "test_value":0
+}""")
+        self.assertTrue(self.tm.__package__ is None)
+
+    def test_010_003_BasicModuleSysmodule(self):
+        """Import module and check module exists in sys.modules"""
+
+        self.createModule("""
+{
+    "test_value":0
+}""")
+        self.assertEqual(self.tm, sys.modules[self.mod_name])
+
+    def test_010_004_BasicModuleLoader(self):
+        """Import module and check loader instance for the module"""
+
+        self.createModule("""
+{
+    "test_value":0
+}""")
+        self.assertTrue(isinstance(self.tm.__loader__, importjson.JSONLoader))
+
+    def test_010_005_BasicModuleGetSource(self):
+        """Import module and check get_source call"""
+
+        self.createModule("""
+{
+    "__doc__":"",
+    "test_value":0
+
+}""")
+        self.assertEqual(self.tm.__loader__.get_source(self.mod_name),
+                         '""""""\n\ntest_value = 0\n')
+
+    def test_010_005_BasicModuleLoaderIsPackage(self):
+        """Import module and check loader is_package method"""
+
+        self.createModule("""
+{
+    "test_value":0
+}""")
+        self.assertTrue(self.tm.__package__ is None)
+        self.assertFalse(self.tm.__loader__.is_package(self.mod_name))
+
+    def test_010_006_BasicModuleGet_code(self):
+        """Import module and check get_code call"""
+
+        self.createModule("""
+{
+    "test_value":0
+}""")
+        c = self.tm.__loader__.get_code(self.mod_name)
+        self.assertTrue(inspect.iscode(c))
+
+    def test_010_052_ValidJsonReload(self):
+        """Test module reload works correctly"""
+        self.createModule("{}")
+        m1, p1, n1 = self.tm, self.path, self.mod_name
+        with open(self.path, "w") as fp:
+            fp.write('{ "a":1 }')
+        reload(m1)
+        self.assertEqual(sys.modules[n1], m1)
+        self.assertEqual(sys.modules[n1].__name__, n1)
+        self.assertEqual(sys.modules[n1].__file__, p1)
+
+    def test_010_053_ValidJsonDirectLoad(self):
+        """Test load_module call works correctly"""
+        self.createModule("{}")
+        m1, p1, n1 = self.tm, self.path, self.mod_name
+        with open(self.path, "w") as fp:
+            fp.write('{ "a":1 }')
+        newm = m1.__loader__.load_module(n1)  # Load directly - rather than calling reload
+        self.assertEqual(sys.modules[n1], newm)
+        self.assertEqual(newm.__name__, n1)
+        self.assertEqual(newm.__file__, p1)
+
+
+class ModuleDataErrors(ModuleContentTest):
+    def setUp(self):
+        super(ModuleDataErrors, self).setUp()
+
+    def tearDown(self):
+        super(ModuleDataErrors, self).tearDown()
+
+    def test_015_000_is_packageUnknownModule(self):
+        """Test that loader.is_package fails to find module not previously loaded"""
+        self.createModule("{}")
+        with self.assertRaises(ImportError):
+            self.tm.__loader__.is_package(self._random_name())
+
+    def test_015_001_get_codeUnknownModule(self):
+        """Test that loader.get_code fails to find module not previously loaded"""
+        self.createModule("{}")
+        with self.assertRaises(ImportError):
+            self.tm.__loader__.get_code(self._random_name())
+
+    def test_015_002_get_sourceUnknownModule(self):
+        """Test that loader.get_source fails to find module not previously loaded"""
+        self.createModule("{}")
+        with self.assertRaises(ImportError):
+            self.tm.__loader__.get_source(self._random_name())
+
+    def test_010_053_ValidJsonDirectLoad(self):
+        """Test module load_module works correctly"""
+        self.createModule("{}")
+        with self.assertRaises(ImportError):
+            self.tm.__loader__.load_module(self._random_name())  # Load directly - rather than calling reload
+
+    def test_015_050_InvalidJSonEmpty(self):
+        """Test that empty file is not able to be imported"""
+        with self.assertRaises(ImportError):
+            self.createModule("")
+
+    def test_015_051_InvalidJSonList(self):
+        """Test that a list is not able to be imported"""
+        with self.assertRaises(ImportError):
+            self.createModule("[]")
+
+    def test_015_052_InvalidJSonIncomplete(self):
+        """Test that an invalid json is not able to be imported"""
+        with self.assertRaises(ImportError):
+            self.createModule("[}")
+
+    def test_015_052_InvalidJSonNotOpenable(self):
+        """Test that a file without read permission cannot be imported"""
+        with self.assertRaises(ImportError):
+            self.createModule("{}", perm_error=True)
+
+
+class ModuleAttributes(ModuleContentTest):
+    def setUp(self):
+        super(ModuleAttributes, self).setUp()
+
+    def tearDown(self):
+        super(ModuleAttributes, self).tearDown()
+
+    def test_016_010_SimpleJsonInt(self):
+        """Import module with single Int value"""
+        self.createModule("""
 {
     "test_value":0
 }""")
 
-        self.assertIs(sys.modules["test_module"], self.tm)
+        self.assertIs(sys.modules[self.mod_name], self.tm)
         self.assertEqual(self.tm.test_value, 0)
 
-    def test_01_000b_SimpleJsonFloat(self):
+    def test_016_011_SimpleJsonFloat(self):
         """Import module with single Float value"""
 
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "test_value":0.1
 }""")
 
-        self.assertIs(sys.modules["test_module"], self.tm)
+        self.assertIs(sys.modules[self.mod_name], self.tm)
         self.assertAlmostEquals(self.tm.test_value, 0.1, 5)
 
-    def test_01_000c_SimpleJsonString(self):
+    def test_016_012_SimpleJsonString(self):
         """Import module with single String value"""
 
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "test_value":"Hello"
 }""")
 
-        self.assertIs(sys.modules["test_module"], self.tm)
+        self.assertIs(sys.modules[self.mod_name], self.tm)
         self.assertEqual(self.tm.test_value, "Hello")
 
-    @unittest.skip("will Always fail unless __classes__ exists in the same json")
-    def test_01_000d_SimpleJsonDict(self):
-        """Import module with single Dict value"""
+    def test_016_013_SimpleJsonDict(self):
+        """Import module with single Dict Module Data Attribute """
 
-        self.tm = self.write_module_json("""
+        # must have __classes__ to ensure correct interpretation
+        self.createModule("""
 {
-    "test_value":{"key1":0, "key2":1}
+    "test_value":{"key1":0, "key2":1},
+    "__classes__":{}
 }""")
 
-        self.assertIs(sys.modules["test_module"], self.tm)
+        self.assertIs(sys.modules[self.mod_name], self.tm)
         self.assertDictEqual(self.tm.test_value, {"key1": 0, "key2": 1})
 
-    def test_01_001_TwoModuleAttributes(self):
-        """Import from directory with two attributes"""
-        self.tm = self.write_module_json("""
+    def test_016_014_SimpleJsonWithList(self):
+        """Import module with single Dict Module Data Attribute - with a sub list"""
+
+        # Test included to check correct interpretation of all type and elements within the dict
+
+        # must have __classes__ to ensure correct interpretation
+        self.createModule("""
+{
+    "test_value":{"key1":0, "key2":[]},
+    "__classes__":{}
+}""")
+        self.assertIs(sys.modules[self.mod_name], self.tm)
+        self.assertDictEqual(self.tm.test_value, {"key1": 0, "key2": []})
+
+    def test_016_020_TwoModuleAttributes(self):
+        """Import module with two attributes"""
+        self.createModule("""
 {
     "test_value1":1,
     "test_value2":2
 }""")
 
-        self.assertIs(sys.modules["test_module"], self.tm)
+        self.assertIs(sys.modules[self.mod_name], self.tm)
         self.assertEqual(self.tm.test_value1, 1)
         self.assertEqual(self.tm.test_value2, 2)
 
-    @staticmethod
-    def docstringcontent():
+    def docstring_content(self):
         """Class name changed after 0.0.1a2"""
         if cmp_version(importjson.importjson.__version__, "0.0.1a2") > 0:
-            return "Module test_module - Created by JSONLoader"
+            return "Module {} - Created by JSONLoader".format(self.mod_name)
         else:
-            return "Module test_module - Created by JSONFinder"
+            return "Module {} - Created by JSONFinder".format(self.mod_name)
 
-    def test_01_002_DefaultDocumentationString(self):
+    def test_016_030_DefaultDocumentationString(self):
         """Test the Default Documentation String"""
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "test_value":0
 }""")
 
-        self.assertIs(sys.modules["test_module"], self.tm)
+        self.assertIs(sys.modules[self.mod_name], self.tm)
         self.assertTrue(isinstance(self.tm.__doc__, basestring))
 
         # Class name changes on version 0.0.1a2
-        self.assertTrue(self.tm.__doc__.startswith(self.docstringcontent()))
+        self.assertTrue(self.tm.__doc__.startswith(self.docstring_content()))
 
         self.assertTrue("Original json data : {}".format(self.tm.__file__) in self.tm.__doc__)
 
-    def test_01_003_OverrideDocumentationString(self):
+    def test_016_031_OverrideDocumentationString(self):
         """Test the Overrider of the Documentation String"""
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "__doc__":"Override documentation string",
     "test_value":0
 }""")
-        self.assertIs(sys.modules["test_module"], self.tm)
+        self.assertIs(sys.modules[self.mod_name], self.tm)
         self.assertTrue(isinstance(self.tm.__doc__, basestring))
         self.assertEqual(self.tm.__doc__, "Override documentation string")
 
@@ -181,40 +396,43 @@ class ClassTests(ModuleContentTest):
 
 class SingleAttrClass(ClassTests):
     def setUp(self):
-        self.tm = self.write_module_json("""
-{
-    "__classes__":{
-        "classa":{
-                "attr":1
-                }
-    }
-}""")
-        self.assertIs(sys.modules["test_module"], self.tm)
+        pass
+
+    def standard_case(self):
+        """Override for the appropriate specific json format"""
+        pass
 
     def tearDown(self):
+        # Not sure why this is needed - but in some cases tm doesn't exist.
+        if not hasattr(self, "tm"):
+            return
+
         del sys.path[-1]
         if self.tm:
             del sys.modules[self.tm.__name__]
-        self.tm = None
+        self.tm, self.mod_name = None, None
 
-    def test_02_000_SimpleClass(self):
+    def test_020_000_SimpleClass(self):
         """Import simple single class"""
+        self.standard_case()
 
         self.assertTrue("classa" in dir(self.tm))
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertTrue(inspect.isdatadescriptor(self.tm.classa.attr))
         self.assertTrue(inspect.ismethod(self.tm.classa.__init__))
 
-    def test_02_001_SimpleClassInstantiatedDefaults(self):
+    def test_020_001_SimpleClassInstantiatedDefaults(self):
         """Import simple single class - check the instance has the right defaults"""
+        self.standard_case()
 
         self.assertTrue(inspect.isclass(self.tm.classa))
         inst = self.tm.classa()
         self.assertTrue(inst.__class__ is self.tm.classa)
         self.assertEqual(inst.attr, 1)
 
-    def test_02_002_SimpleClassInstantiatedKWord(self):
+    def test_020_002_SimpleClassInstantiatedKWord(self):
         """Import simple single attr class - keyword instantiation"""
+        self.standard_case()
 
         self.assertTrue(inspect.isclass(self.tm.classa))
         inst = self.tm.classa(attr=23)
@@ -225,8 +443,9 @@ class SingleAttrClass(ClassTests):
         self.assertTrue(inst.__class__ is self.tm.classa)
         self.assertEqual(inst.attr, "Hello")
 
-    def test_02_003_SimpleClassInstantiatedNoKeyword(self):
+    def test_020_003_SimpleClassInstantiatedNoKeyword(self):
         """Import simple single class - None key word instantiation"""
+        self.standard_case()
 
         self.assertTrue(inspect.isclass(self.tm.classa))
         inst = self.tm.classa(23)
@@ -240,7 +459,10 @@ class SingleAttrClass(ClassTests):
 
 class SingAttrClassExplicit(SingleAttrClass):
     def setUp(self):
-        self.tm = self.write_module_json("""
+        pass
+
+    def standard_case(self):
+        self.createModule("""
 {
     "__classes__":{
         "classa":{
@@ -248,23 +470,82 @@ class SingAttrClassExplicit(SingleAttrClass):
                 }
     }
 }""")
-        self.assertIs(sys.modules["test_module"], self.tm)
+        self.assertIs(sys.modules[self.mod_name], self.tm)
+
+    def error_class_def(self, alt_type):
+        self.createModule("""
+{
+    "__classes__":{
+        "classa":%s
+    }
+}""" % alt_type())
+        self.assertIs(sys.modules[self.mod_name], self.tm)
+
+    def error_classes_json(self, alt_type):
+        self.createModule("""
+{
+    "__classes__":%s
+}""" % alt_type())
+        self.assertIs(sys.modules[self.mod_name], self.tm)
+
+    def test_020_010_ClassJsonIsList(self):
+        """Extra case for explicit format only - check that a class definition which is a list is rejected"""
+        with self.assertRaises(ImportError):
+            self.error_class_def(alt_type=list)
+
+    def test_020_011_ClassJsonIsStr(self):
+        """Extra case for explicit format only - check that a class definition which is a str is rejected"""
+        with self.assertRaises(ImportError):
+            self.error_class_def(alt_type=str)
+
+    def test_020_012_ClassJsonIsInt(self):
+        """Extra case for explicit format only - check that a class definition which is a int is rejected"""
+        with self.assertRaises(ImportError):
+            self.error_class_def(alt_type=int)
+
+    def test_020_013_ClassJsonIsFloat(self):
+        """Extra case for explicit format only - check that a class definition which is a float is rejected"""
+        with self.assertRaises(ImportError):
+            self.error_class_def(alt_type=float)
+
+    def test_020_030_ClassesJsonIsList(self):
+        """Extra case for explicit format only - check that a classes definition which is a list is rejected"""
+        with self.assertRaises(ImportError):
+            self.error_classes_json(alt_type=list)
+
+    def test_020_021_ClassesJsonIsStr(self):
+        """Extra case for explicit format only - check that a classes definition which is a str is rejected"""
+        with self.assertRaises(ImportError):
+            self.error_classes_json(alt_type=str)
+
+    def test_020_022_ClassesJsonIsInt(self):
+        """Extra case for explicit format only - check that a classes definition which is a int is rejected"""
+        with self.assertRaises(ImportError):
+            self.error_classes_json(alt_type=int)
+
+    def test_020_023_ClassesJsonIsFloat(self):
+        """Extra case for explicit format only - check that a classes definition which is a float is rejected"""
+        with self.assertRaises(ImportError):
+            self.error_classes_json(alt_type=float)
 
 
 class SingleAttrClassImplicit(SingleAttrClass):
     def setUp(self):
-        self.tm = self.write_module_json("""
+        pass
+
+    def standard_case(self):
+        self.createModule("""
 {
     "classa":{
             "attr":1
             }
 }""")
-        self.assertIs(sys.modules["test_module"], self.tm)
+        self.assertIs(sys.modules[self.mod_name], self.tm)
 
 
 class MultipleAttrClass(ClassTests):
     def setUp(self):
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "__classes__":{
         "classa":{
@@ -278,7 +559,7 @@ class MultipleAttrClass(ClassTests):
         del sys.path[-1]
         del sys.modules[self.tm.__name__]
 
-    def test_03_000_ClassTwoAttributes(self):
+    def test_030_000_ClassTwoAttributes(self):
         """Import simple multiple attr class - check the instance has the right defaults"""
         self.assertTrue(inspect.isclass(self.tm.classa))
         inst = self.tm.classa()
@@ -286,7 +567,7 @@ class MultipleAttrClass(ClassTests):
         self.assertEqual(inst.attr1, 1)
         self.assertEqual(inst.attr2, 2)
 
-    def test_03_001_SimpleClassInstantiatedKWord(self):
+    def test_030_001_SimpleClassInstantiatedKWord(self):
         """Import simple multiple attr class - keyword instantiation"""
 
         self.assertTrue(inspect.isclass(self.tm.classa))
@@ -300,7 +581,7 @@ class MultipleAttrClass(ClassTests):
         self.assertEqual(inst.attr1, "Hello")
         self.assertEqual(inst.attr2, "Goodbye")
 
-    def test_03_002_SimpleClassInstantiatedNoKeyWord(self):
+    def test_030_002_SimpleClassInstantiatedNoKeyWord(self):
         """Import simple multiple attr class - none keyword instantiation"""
 
         self.assertTrue(inspect.isclass(self.tm.classa))
@@ -317,7 +598,7 @@ class MultipleAttrClass(ClassTests):
 
 class MultipleAttrClassExplicit(MultipleAttrClass):
     def setUp(self):
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "__classes__":{
         "classa":{
@@ -330,7 +611,7 @@ class MultipleAttrClassExplicit(MultipleAttrClass):
 
 class MultipleAttrClassImplicit(MultipleAttrClass):
     def setUp(self):
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "classa":{
             "attr1":1,
@@ -340,24 +621,63 @@ class MultipleAttrClassImplicit(MultipleAttrClass):
 
 
 class ClassAttributes(ClassTests):
+    def class_attr_not_dict(self, alt_type):
+        """Method to be overriden - create module where the class attributes is of type not dictionary"""
+        pass
+
+    def normalclass(self):
+        """Override to create the normal class"""
+        pass
+
+    def class_doc_only(self, doc_string=""):
+        """Override to create json with class defined with __doc__ only"""
+        pass
+
     def setUp(self):
-        self.tm = None
+        self.tm, self.mod_name = None, None
 
     def tearDown(self):
         del sys.path[-1]
         if self.tm:
             del sys.modules[self.tm.__name__]
 
-    def test_04_000_ClassAttributes(self):
+    def test_040_000_ClassAttributes(self):
         """Import class - with class attributes"""
+        self.normalclass()
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertEqual(self.tm.classa.cls_attr1, -1)
         self.assertAlmostEqual(self.tm.classa.cls_attr2, 0.1)
 
+    def test_040_001_ClassAttributesDocOnly(self):
+        """ Test class definition with __doc__ string only"""
+        self.class_doc_only(doc_string="Hello Doc string")
+        self.assertTrue(inspect.isclass(self.tm.classa))
+        self.assertEqual(self.tm.classa.__doc__, "Hello Doc string")
+
+    def test_040_011_ClassAttributesListNotDict(self):
+        """ Test that if class Attribute section is a list- then Import fails"""
+        with self.assertRaises(ImportError):
+            self.class_attr_not_dict(alt_type=list)
+
+    def test_040_012_ClassAttributesIntNotDict(self):
+        """ Test that if class Attribute section is a int - then Import fails"""
+        with self.assertRaises(ImportError):
+            self.class_attr_not_dict(alt_type=int)
+
+    def test_040_013_ClassAttributeFloatNotDict(self):
+        """ Test that if class Attribute section is a float - then Import fails"""
+        with self.assertRaises(ImportError):
+            self.class_attr_not_dict(alt_type=float)
+
+    def test_040_014_ClassAttributesStrNotDict(self):
+        """ Test that if class Attribute section is a str - then Import fails"""
+        with self.assertRaises(ImportError):
+            self.class_attr_not_dict(alt_type=str)
+
 
 class ClassAttributesExplicit(ClassAttributes):
-    def setUp(self):
-        self.tm = self.write_module_json("""
+    def normalclass(self):
+        self.createModule("""
 {
     "__classes__":{
         "classa":{
@@ -372,10 +692,73 @@ class ClassAttributesExplicit(ClassAttributes):
     }
 }""")
 
+    def class_attr_not_dict(self, alt_type):
+        self.createModule("""
+{
+    "__classes__":{
+        "classa":{
+            "__doc__":"Class A",
+            "__class_attributes__":%s,
+                "attr1":1,
+                "attr2":2
+                }
+    }
+}""" % alt_type())
+
+    def class_doc_only(self, doc_string=""):
+        self.createModule("""
+{
+    "__classes__":{
+        "classa":{
+            "__doc__":"%s"
+        }
+    }
+}""" % doc_string)
+
+    def test_040_020_ClassNoDataInstanceAttributes(self):
+        """ Test that if class has no attributes - and has no other contents (not class attributes)"""
+        self.createModule("""
+{
+        "__classes__":{
+            "classa":{
+                    }
+        }
+}""")
+        self.assertTrue(inspect.isclass(self.tm.classa))
+
+    def test_040_021_ClassNoDataInstanceAttributes1(self):
+        """ Test that if class has no attributes - but has other contents (not class attributes)"""
+        self.createModule("""
+{
+        "__classes__":{
+            "classa":{
+                "__constraints__":{}
+                    }
+        }
+}""")
+        self.assertTrue(inspect.isclass(self.tm.classa))
+
+    def test_040_022_ClassAttributesOnly(self):
+        """ Test that if class has no attributes - but has other contents (not class attributes)"""
+        self.createModule("""
+{
+        "__classes__":{
+            "classa":{
+                "__class_attributes__":{
+                    "attr1":1,
+                    "attr2":2
+                }
+            }
+        }
+}""")
+        self.assertTrue(inspect.isclass(self.tm.classa))
+        self.assertEqual(self.tm.classa.attr1, 1)
+        self.assertEqual(self.tm.classa.attr2, 2)
+
 
 class ClassAttributesImplicit(ClassAttributes):
-    def setUp(self):
-        self.tm = self.write_module_json("""
+    def normalclass(self):
+        self.createModule("""
 {
     "classa":{
         "__doc__":"Class A",
@@ -388,16 +771,69 @@ class ClassAttributesImplicit(ClassAttributes):
             }
 }""")
 
+    def class_attr_not_dict(self, alt_type):
+        self.createModule("""
+{
+        "classa":{
+            "__doc__":"Class A",
+            "__class_attributes__":%s,
+                "attr1":1,
+                "attr2":2
+                }
+}""" % alt_type())
+
+    def class_doc_only(self, doc_string=""):
+        self.createModule("""
+{
+    "classa":{
+        "__doc__":"%s"
+    }
+}""" % doc_string)
+
+    def test_040_020_ClassNoDataInstanceAttributes(self):
+        """ Test that if class has no attributes - but has other contents (not class attributes)"""
+        self.createModule("""
+{
+        "classa":{
+                }
+}""")
+        self.assertTrue(inspect.isclass(self.tm.classa))
+
+    def test_040_021_ClassNoDataInstanceAttributes1(self):
+        """ Test that if class has no attributes - but has other contents (not class attributes)"""
+        self.createModule("""
+{
+        "classa":{
+            "__constraints__":{}
+                }
+}""")
+        self.assertTrue(inspect.isclass(self.tm.classa))
+
+    def test_040_022_ClassAttributesOnly(self):
+        """ Test that if class has class attributes and nothing else"""
+        self.createModule("""
+{
+        "classa":{
+            "__class_attributes__":{
+                "attr1":1,
+                "attr2":2
+            }
+        }
+}""")
+        self.assertTrue(inspect.isclass(self.tm.classa))
+        self.assertEqual(self.tm.classa.attr1, 1)
+        self.assertEqual(self.tm.classa.attr2, 2)
+
 
 class ClassInheritance(ClassTests):
     def setUp(self):
-        self.tm = None
+        self.tm, self.mod_name = None, None
 
     def tearDown(self):
         del sys.path[-1]
         del sys.modules[self.tm.__name__]
 
-    def test_05_000_ClassInheritance(self):
+    def test_050_000_ClassInheritance(self):
         """Import two classes - with inheritance between them"""
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertTrue(inspect.isclass(self.tm.classb))
@@ -411,7 +847,7 @@ class ClassInheritance(ClassTests):
 
 class ClassInheritanceExplicit(ClassInheritance):
     def setUp(self):
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "__classes__":{
         "classa":{
@@ -431,7 +867,7 @@ class ClassInheritanceExplicit(ClassInheritance):
 
 class ClassInheritanceImplicit(ClassInheritance):
     def setUp(self):
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "classa":{
         "__doc__":"Class A",
@@ -449,20 +885,18 @@ class ClassInheritanceImplicit(ClassInheritance):
 
 class ClassAttrConstraint(ClassTests):
     def setUp(self):
-        if "test_module" in sys.modules:
-            del sys.modules["test_module"]
-        self.tm = None
+        self.tm, self.mod_name = None, None
 
     def tearDown(self):
         del sys.path[-1]
         if self.tm:
             del sys.modules[self.tm.__name__]
-        self.tm = None
+        self.tm, self.mod_name = None, None
 
     # noinspection PyUnusedLocal
-    def test_10_000_min_constraint(self):
+    def test_100_000_min_constraint(self):
         """Integer attribute with min constraint"""
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "classa":{
             "a1":1,
@@ -485,9 +919,9 @@ class ClassAttrConstraint(ClassTests):
             insta = self.tm.classa(a1=-1)
 
     # noinspection PyUnusedLocal
-    def test_10_010_max_constraint(self):
+    def test_100_010_max_constraint(self):
         """Integer attribute with max constraint"""
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "classa":{
             "a1":1,
@@ -510,9 +944,9 @@ class ClassAttrConstraint(ClassTests):
             insta = self.tm.classa(a1=20)
 
     # noinspection PyUnusedLocal,PyUnusedLocal
-    def test_10_010_min_max_constraint(self):
+    def test_100_010_min_max_constraint(self):
         """Integer attribute with min/max constraint"""
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "classa":{
             "a1":1,
@@ -540,9 +974,9 @@ class ClassAttrConstraint(ClassTests):
         with self.assertRaises(ValueError):
             insta = self.tm.classa(a1=-2)
 
-    def test_10_020_type_int_constraint(self):
+    def test_100_020_type_int_constraint(self):
         """Integer attribute with type constraint"""
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "classa":{
             "a1":1,
@@ -576,9 +1010,9 @@ class ClassAttrConstraint(ClassTests):
 
         insta.a1 = False
 
-    def test_10_021_type_str_constraint(self):
+    def test_100_021_type_str_constraint(self):
         """String attribute with type constraint"""
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "classa":{
             "a1":"a",
@@ -614,9 +1048,9 @@ class ClassAttrConstraint(ClassTests):
             insta.a1 = False
         self.assertEqual(insta.a1, "a")
 
-    def test_10_022_type_float_constraint(self):
+    def test_100_022_type_float_constraint(self):
         """String attribute with type constraint"""
-        self.tm = self.write_module_json("""
+        self.createModule("""
 {
     "classa":{
             "a1":1.2,
@@ -650,6 +1084,83 @@ class ClassAttrConstraint(ClassTests):
         insta.a1 = 1
         self.assertEqual(insta.a1, 1)
 
+    def test_100_030_not_none_true_constraint(self):
+        """String attribute with type constraint"""
+        self.createModule("""
+{
+    "classa":{
+            "a1":0,
+        "__constraints__":{
+            "a1":{
+                "not_none":true
+                }
+            }
+        }
+}""")
+
+        self.assertTrue("classa" in dir(self.tm))
+        insta = self.tm.classa()
+        insta.a1 = 1
+
+        with self.assertRaises(ValueError):
+            insta.a1 = None
+
+    def test_100_031_not_none_false_constraint(self):
+        """String attribute with type constraint"""
+        self.createModule("""
+{
+    "classa":{
+            "a1":0,
+        "__constraints__":{
+            "a1":{
+                "not_none":false
+                }
+            }
+        }
+}""")
+
+        self.assertTrue("classa" in dir(self.tm))
+        insta = self.tm.classa()
+        insta.a1 = None
+
+    def test_100_040_read_only_true_constraint(self):
+        """String attribute with type constraint"""
+        self.createModule("""
+{
+    "classa":{
+            "a1":0,
+        "__constraints__":{
+            "a1":{
+                "read_only":true
+                }
+            }
+        }
+}""")
+
+        self.assertTrue("classa" in dir(self.tm))
+        insta = self.tm.classa()
+
+        with self.assertRaises(ValueError):
+            insta.a1 = 1
+
+    def test_100_030_read_only_false_constraint(self):
+        """String attribute with type constraint"""
+        self.createModule("""
+{
+    "classa":{
+            "a1":0,
+        "__constraints__":{
+            "a1":{
+                "read_only":false
+                }
+            }
+        }
+}""")
+
+        self.assertTrue("classa" in dir(self.tm))
+        insta = self.tm.classa()
+        insta.a1 = 1
+
 
 # noinspection PyUnusedLocal
 def load_install_tests(loader, tests=None, pattern=None):
@@ -667,16 +1178,18 @@ def load_install_tests(loader, tests=None, pattern=None):
 # noinspection PyUnusedLocal
 def load_remaining_tests(loader, tests=None, pattern=None):
     test_classes = [
-                ModuleAttributes,
-                SingAttrClassExplicit,
-                SingleAttrClassImplicit,
-                MultipleAttrClassExplicit,
-                MultipleAttrClassImplicit,
-                ClassAttributesImplicit,
-                ClassAttributesExplicit,
-                ClassInheritanceExplicit,
-                ClassInheritanceImplicit,
-                ClassAttrConstraint
+        ModuleData,
+        ModuleDataErrors,
+        ModuleAttributes,
+        SingAttrClassExplicit,
+        SingleAttrClassImplicit,
+        MultipleAttrClassExplicit,
+        MultipleAttrClassImplicit,
+        ClassAttributesImplicit,
+        ClassAttributesExplicit,
+        ClassInheritanceExplicit,
+        ClassInheritanceImplicit,
+        ClassAttrConstraint
     ]
 
     suite = unittest.TestSuite()
@@ -692,7 +1205,9 @@ if __name__ == '__main__':
     Installtest_suite = load_install_tests(ldr)
     test_suite = load_remaining_tests(ldr)
 
-    result = unittest.TextTestRunner(verbosity=2).run(Installtest_suite)
+    print "Installation of sys.meta_path hook"
+    result = unittest.TextTestRunner(verbosity=1).run(Installtest_suite)
     assert isinstance(result, unittest.TestResult)
     if len(result.errors) + len(result.failures) == 0:
-        unittest.TextTestRunner(verbosity=2).run(test_suite)
+        print "Functionality tests - tests loader is correct, and the imported json creates a valid module"
+        unittest.TextTestRunner(verbosity=1).run(test_suite)
