@@ -1,7 +1,7 @@
 __change_log__ = """
 -------------
                                 Change Log
- Version 0.0.1a7 (tba)
+ Version 0.0.1a7 (24 Nov 2015)
         Issue 6 : Implemented ability to constrain type of Instance Attribute to be one of the classes in the module.
         Issue 4 : Implemented "read_only"
         Issue 5 : Implemented "not_none"
