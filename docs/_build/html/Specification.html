@@ -1,0 +1,305 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Details &mdash; importjson 0.0.1a7 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="importjson 0.0.1a7 documentation" href="index.html"/>
+        <link rel="next" title="Extra Information" href="ExtraInfo.html"/>
+        <link rel="prev" title="Constraints" href="Constraints.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> importjson
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1a7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Constraints.html">Constraints</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Details</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-configuration">1. Module Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#json-file-structure">1. JSON file structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#top-level-content">1. Top Level content</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#content-of-classes-dictionary">1. Content of <strong>``__classes__``</strong> dictionary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#content-of-a-class-defining-dictionary">1. Content of a class defining dictionary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#content-of-the-class-attributes-dictionary">1. Content of the <strong>``__class_attributes__``</strong> dictionary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#content-of-the-constraints-dictionary">1. Content of the <strong>``__constraints__``</strong> dictionary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ExtraInfo.html">Extra Information</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">importjson</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Details</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/Specification.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="details">
+<h1>Details<a class="headerlink" href="#details" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-configuration">
+<h2>1. Module Configuration<a class="headerlink" href="#module-configuration" title="Permalink to this headline">¶</a></h2>
+<p>The importjson module supports one configuration options, set using <strong>``importjson.configure(&lt;config_item&gt;,&lt;value&gt;)``</strong>. The config_items supported are :</p>
+<ul class="simple">
+<li><strong>``JSONSuffixes``</strong> : A list of valid JSON file name suffixes which are used when searching for potential JSON files to import. The default is [&#8221;.json&#8221;]. Setting this value incorrectly will prevent the library from finding or importing any JSON files - so take care.</li>
+</ul>
+<p>A previous configuration item <strong>``AllDictionariesAsClasses``</strong> has been rendered obsolete due to changes in <strong>``0.0.1a5``</strong> and a exception is raised if this item is attempted to be used.</p>
+</div>
+<div class="section" id="json-file-structure">
+<h2>1. JSON file structure<a class="headerlink" href="#json-file-structure" title="Permalink to this headline">¶</a></h2>
+<p>The json file must be in a specific format :</p>
+<p>The Top level of the json file <strong>must</strong> be a directory.</p>
+</div>
+<div class="section" id="top-level-content">
+<h2>1. Top Level content<a class="headerlink" href="#top-level-content" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt><strong>All</strong> key, value pairs in the top level are created as module level attributes (see example of <strong>``__version__``</strong> above) with the following notes and exceptions:</dt>
+<dd><ul class="first last simple">
+<li>An optional key of <strong>``__doc__``</strong> is found then the value is used as the module documentation string instead of an automatically generated string. While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object.</li>
+<li>If an optional key of <strong>``__classes__``</strong> exists then this dictionary is interpreted as the definition of the classes in this module - see section 3. Any in this case any other dictionary under the Top Level JSON is treated as a Module Data Attribute.</li>
+<li>If an optional key of <strong>``__classes__``</strong> does not exists then all dictionaries under the Top Level areas the definition of the classes in this module - see section 4. Any in this case it is not possible to define a Module Data Attribute with a dictionary value.</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="content-of-classes-dictionary">
+<h2>1. Content of <strong>``__classes__``</strong> dictionary<a class="headerlink" href="#content-of-classes-dictionary" title="Permalink to this headline">¶</a></h2>
+<p>When the <strong>``__classes__``</strong> dictionary exists in the json file, each key,value within that dictionary is a separate class to be created. The key is the class name, and the value must be a dictionary (called the class defining dictionary) - see section 4. An example of this form of JSON file is used above.</p>
+</div>
+<div class="section" id="content-of-a-class-defining-dictionary">
+<h2>1. Content of a class defining dictionary<a class="headerlink" href="#content-of-a-class-defining-dictionary" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>Within the class defining dictionary, each key,value pair is used as instance attributes; the value in the json file is used as the default value for that attribute, and is set as such in the initializer method for the class. This is true for all key,value pairs with the following notes and exceptions:</dt>
+<dd><ul class="first last simple">
+<li>An optional key of <strong>``__doc__``</strong> will set the documentation string for the class - unlike at module level there is no automatically generated documentation string for the class. While it is normal that the value is a string if a different object is provided the documentation string will be set to the string representation of that object</li>
+<li>An optional key of <strong>``__class_attributes__``</strong> will have the value which is a dictionary : This dictionary defines the names and values of the class data attributes (as opposed to the instance data attributes) - see section 5</li>
+<li>An optional key of <strong>``__parent__``</strong> will have a string value which is used as the name of a superclass for this class.</li>
+<li>An optional key <strong>``__constraints__``</strong> which will have a dictionary value - and define constraint to be applied to the value of individual Instance Data Attributes - see section 6</li>
+</ul>
+</dd>
+</dl>
+</div>
+<div class="section" id="content-of-the-class-attributes-dictionary">
+<h2>1. Content of the <strong>``__class_attributes__``</strong> dictionary<a class="headerlink" href="#content-of-the-class-attributes-dictionary" title="Permalink to this headline">¶</a></h2>
+<p>Within the <strong>``__class_attributes__``</strong> dictionary each key, value pair defines the name and value of a class data attribute. There are no exceptions to this rule.</p>
+</div>
+<div class="section" id="content-of-the-constraints-dictionary">
+<h2>1. Content of the <strong>``__constraints__``</strong> dictionary<a class="headerlink" href="#content-of-the-constraints-dictionary" title="Permalink to this headline">¶</a></h2>
+<p>Within the <strong>``__constraints__``</strong> dictionary each key is the the name Instance Data attribute, as defined within the class defining dictionary. It is not neccessary for every Instance Data Attribute to be represented by a key in the <strong>``__constraints__``</strong> dictionary.</p>
+<p>Each key has the value of a dictionary, and this dictionary has zero or more keys within it (every key being optional) :</p>
+<ul class="simple">
+<li><strong>``type``</strong> : Can be used to constrain the type of value allowed for the attribute
+- <strong>``list``</strong> : constrains the type to be a list (the values of the items are not restricted)
+- <strong>``str``</strong> : constrains the type to be a string or basestring
+- <strong>``int``</strong>  : constrains the type to be a integer or boolean
+- <strong>``float``</strong>  : constrains the type to be a float or integer
+- <strong>``dict``</strong>  : constrains the type to be a dictionary (keys and values are not restricted)
+- <strong>``bool``</strong> : constrains the type to be boolean (i.e. True or False Only)
+- Any other value must be the name of a class defined in the JSON file.</li>
+<li><strong>``min``</strong> : Constrain the minimum value allowed for the attribute - applied to strings and numeric values only</li>
+<li><strong>``max``</strong> : Constrain the maximum value allowed for the attribute - applied to strings and numeric values only</li>
+<li><strong>``not_none``</strong> : determines if the value is allowed to be a None value</li>
+<li><strong>``read_only``</strong> : determine if the value can be changed after the instance is created</li>
+</ul>
+<p>If an attempt is made to set an attribute to a value outside the range defined by <strong>``min``</strong> and <strong>``max``</strong> the <strong>``ValueError``</strong> exception will be raised. This include setting the value within the Instance initializer.</p>
+<p>If an attempt is made to set an attribute to a value which does not match the type criteria, then a <strong>``TypeError``</strong> exception will be raised. This includes setting the value within the Instance initializer.</p>
+<p>If an attempt is made to set an attribute to None when <strong>``not_none``</strong> is set to True, a <strong>``ValueError``</strong> exception will be raised. This value defaults to false - i.e. None values are allowed.</p>
+<ul class="simple">
+<li>If an attempt is made to set an attribute when <strong>``read_only``</strong> is set to True, a <strong>``ValueError``</strong> exception will be raised. This does not include setting the attribute in the initialiser/constructor. This value defaults to False, i.e. attributes can be changed at any time.</li>
+</ul>
+<p>All criteria are optional - an empty or missing constraints section for a given attribute has no effect.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="100%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>Warning</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Since the constraints are applied every time the value is set, including the initializer, you must
+ensure that the default value given for the data attribute is valid based on any constraints defined
+for that attribute. If the default value is invalid, then the JSON will import successfully, but the
+class will not be able to be created with it&#8217;s default values.
+The values in the constraints section are not cross checked currently at the time of import, and
+any errors (such as incorrect numeric ranges or invalid types) will only be detectable when
+instances are created. It is relatively simple though to change the json file and reload the module.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ExtraInfo.html" class="btn btn-neutral float-right" title="Extra Information" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Constraints.html" class="btn btn-neutral" title="Constraints" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Tony Flury.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1a7',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

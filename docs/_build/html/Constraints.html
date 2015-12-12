@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Constraints &mdash; importjson 0.0.1a7 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="importjson 0.0.1a7 documentation" href="index.html"/>
+        <link rel="next" title="Details" href="Specification.html"/>
+        <link rel="prev" title="Getting Started" href="GettingStarted.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> importjson
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1a7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="GettingStarted.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Constraints</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#extending-constraints">Extending constraints</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Specification.html">Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtraInfo.html">Extra Information</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">importjson</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Constraints</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/Constraints.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="constraints">
+<h1>Constraints<a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h1>
+<p>It is possible to define constraint criteria for the Instance Data Attributes, by using a <strong>``__constraints__``</strong> sub
+dictionary within the class definition - as an example :</p>
+<div class="highlight-json"><div class="highlight"><pre><span class="p">{</span>
+    <span class="nt">&quot;point&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;x&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;y&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;__constraints__&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;x&quot;</span><span class="p">:{</span>
+                <span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;int&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;min&quot;</span><span class="p">:</span><span class="mi">-100</span><span class="p">,</span>
+                <span class="nt">&quot;max&quot;</span><span class="p">:</span><span class="mi">100</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This would implement a definition of the <strong>``x``</strong> attribute on instances of the <strong>``point``</strong> class could only ever be set to
+an integer (or boolean), and must between -100 and 100 inclusive. The allowed criteria are <strong>``type``</strong>, <strong>``min``</strong>, <strong>``max``</strong>, <strong>``read_only``</strong> and <strong>``not_none``</strong>.
+The**``type``** can be any one of <strong>``list``</strong>, <strong>``str``</strong>, <strong>``int``</strong>, <strong>``float``</strong>, <strong>``dict``</strong> or <strong>``bool``</strong> or the name of a class which is also defined in the JSOn file.</p>
+<blockquote>
+<div><ul class="simple">
+<li>A <strong>``type``</strong> of <strong>``float``</strong> will allow both floats and integer values</li>
+<li>A <strong>``type``</strong> of <strong>``int``</strong> will allow both integers and booleans values</li>
+<li>A <strong>``type``</strong> of <strong>``bool``</strong> will only allow either True or False values</li>
+<li>If the constraint of <strong>``not_none``</strong> is True, a <strong>``ValueError``</strong> will be raised if any attempt is made to assign a <strong>``None``</strong> value to the attribute which is not None. For lists and dictionaries an empty list or dict is not the same as a <strong>``None``</strong> value.</li>
+<li>If the constraint of <strong>``read_only``</strong> is True, a <strong>``ValueError``</strong> will be raised if an attempt is made to assign the attribute (other than the assignment made during initialisation).</li>
+<li>If an attempt is made to set an attribute to a value outside the range defined by <strong>``min``</strong> and <strong>``max``</strong>, a <strong>``ValueError``</strong> exception will be raised.</li>
+<li>If an attempt is made to set an attribute to a value which does not match the type criteria, then a <strong>``TypeError``</strong> exception will be raised.</li>
+<li>All criteria are optional - but an empty or missing constraints section has no effect (and specifically <strong>``not_none``</strong>, and <strong>``read_only``</strong> default to False when omitted)</li>
+</ul>
+</div></blockquote>
+<table border="1" class="docutils">
+<colgroup>
+<col width="100%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>Warning</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>You must ensure that the constraints for each instance attribute are self consistent, and don&#8217;t contradict the
+specified default value for that attribute. The constraints section is not validate at the time of import, but if
+the constraints are wrong, or non-consistent then there will be exceptions raised during instance initialisation
+or other attribute assignment.</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="extending-constraints">
+<h2>Extending constraints<a class="headerlink" href="#extending-constraints" title="Permalink to this headline">¶</a></h2>
+<p>The constraints system has been constructed to allow simple extensions. By subclassing the class, and creating a method called <strong>``_constrain_&lt;attr_name&gt;``</strong> you can add further tests to the constraints applied to the named attribute. As an example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">importjson</span>
+<span class="kn">import</span> <span class="nn">json_classes</span> <span class="c"># Defines the `classa` class which has Data Instance attribute x</span>
+
+<span class="k">class</span> <span class="nc">XMustBeEven</span><span class="p">(</span><span class="n">json_classes</span><span class="o">.</span><span class="n">classa</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_constrain_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">XMustBeEven</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_constrain_x</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Value Error : x must be an even number&quot;</span><span class="p">)</span>
+
+<span class="n">e</span> <span class="o">=</span> <span class="n">XMustBeEven</span><span class="p">()</span>
+<span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">2</span> <span class="c"># will be fine - no exceptions expected</span>
+<span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">Value</span> <span class="n">Error</span> <span class="p">:</span> <span class="n">x</span> <span class="n">must</span> <span class="n">be</span> <span class="n">an</span> <span class="n">even</span> <span class="n">number</span>
+</pre></div>
+</div>
+<p>The <strong>``_constrain_&lt;attr_name&gt;``</strong> method takes the <strong>``value``</strong> as an argument (this is the attempted new value, not the current value, and must
+either return a value (which will be stored as the value of the attribute, or must raise an Exception (ValueError and TypeError are the norms)</p>
+<p>As shown in the example any extension should call the <strong>``&lt;super class&gt; _constrain``</strong> method first, as it is that method which applies all of the constrains defined in the JSON file - including any type checks. By allowing the superclass method to execute first, you can be sure that the value returned is the expected type (assuming that the JSON file constrains the type).</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Specification.html" class="btn btn-neutral float-right" title="Details" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="GettingStarted.html" class="btn btn-neutral" title="Getting Started" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Tony Flury.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1a7',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

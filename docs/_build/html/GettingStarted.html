@@ -1,0 +1,351 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Getting Started &mdash; importjson 0.0.1a7 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="importjson 0.0.1a7 documentation" href="index.html"/>
+        <link rel="next" title="Constraints" href="Constraints.html"/>
+        <link rel="prev" title="importjson : Import json data into a python application" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> importjson
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1a7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#json-format">Json Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#search-path">Search Path</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example-json">Example Json</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#importing-the-json-file">Importing the JSON file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-data-attributes">Module Data Attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#creating-instances">Creating Instances</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Constraints.html">Constraints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Specification.html">Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtraInfo.html">Extra Information</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">importjson</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Getting Started</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/GettingStarted.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="json-format">
+<h2>Json Format<a class="headerlink" href="#json-format" title="Permalink to this headline">¶</a></h2>
+<p>By default <cite>importjson</cite> creates the module according to some simple rules (see <a class="reference internal" href="Specification.html"><em>Details</em></a> for exact details on the required format for the json) :</p>
+<ul class="simple">
+<li>The json file must define a dictionary - i.e. the first and last characters must be a <cite>{</cite> and <cite>}</cite> respectively</li>
+<li>name values in the top-level dictionary are converted to module data attributes</li>
+<li>sub-dictionaries in the top-level dictionary are converted to classes - the name of the dictionary becomes the name of the class</li>
+<li>name value pairs in the class dictionaries are converted to instance data attributes with a few expections :<ul>
+<li>a name of <cite>__doc__</cite> can be used to define the documentation string for the class</li>
+<li>a name of <cite>__parent__</cite> can be used to define that the class is subclassed from another class within the json file.</li>
+<li>a name of <cite>__class_attributes__</cite> can be used to define class data attributes (rather than instance attributes). name/value pairs in the <cite>__class_attributes__</cite> dictionary are converted to class data attributes with the appropriate name and starting value.</li>
+<li>a name of <cite>__constraints__</cite> can be used to define type, range and other constraints for the instance data attributes (See <a class="reference internal" href="Constraints.html"><em>Constraints</em></a> for details on how to specify constraints)</li>
+</ul>
+</li>
+<li>within a class dictionary - any name/value pairs where the value is a dictionary is defined as instance data variable with a default value of a dictionary.</li>
+</ul>
+<p>You can define multiple classes per json file.</p>
+</div>
+<div class="section" id="search-path">
+<h2>Search Path<a class="headerlink" href="#search-path" title="Permalink to this headline">¶</a></h2>
+<p>The <cite>importjson</cite> library will look for json files across all directories and files specified in <cite>sys.path</cite>, ie. the same search path as normal
+python modules. With the <cite>importjson</cite> library in use it will take any attempted import first and try to find a relevant JSON file to import, and
+only if it is unable to find a JSON file of the appropriate name to import in any <cite>sys.path</cite> entry will it then hand over to the default python import to search for .py or .pyc files. This means that for instance if you have <cite>classes.json</cite> and <cite>classes.py</cite> in the same directory or package and your code either implicitly or explicitly imports <cite>classes</cite>, then classes.json file will be found first and will be imported and the classes.py file will be effectively hidden, and cannot be imported. This will cause unexpected behaviour unless you are careful about your file naming.</p>
+</div>
+<div class="section" id="example-json">
+<h2>Example Json<a class="headerlink" href="#example-json" title="Permalink to this headline">¶</a></h2>
+<p>Using the following json file as an example to illustrate the key features of the importjson library:</p>
+<p>Place the json file called <cite>classes.json</cite> exists in your applications current directory</p>
+<div class="highlight-json"><div class="highlight"><pre><span class="p">{</span>
+    <span class="nt">&quot;__version__&quot;</span><span class="p">:</span><span class="s2">&quot;0.1&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;__author__&quot;</span><span class="p">:</span><span class="s2">&quot;Tony&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;point&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;__doc__&quot;</span><span class="p">:</span> <span class="s2">&quot;Example class built from json&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;__class_attributes__&quot;</span><span class="p">:</span> <span class="p">{</span>
+                          <span class="nt">&quot;_val1&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                          <span class="nt">&quot;_val2&quot;</span><span class="p">:</span> <span class="mi">2</span>
+                        <span class="p">},</span>
+        <span class="nt">&quot;x&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;y&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;colour&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+         <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="section" id="importing-the-json-file">
+<h3>Importing the JSON file<a class="headerlink" href="#importing-the-json-file" title="Permalink to this headline">¶</a></h3>
+<p>Importing this json file is easy :</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">importjson</span> <span class="c"># Importjson library - must be imported before any json files</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">classes</span>          <span class="c"># Will import classes.json</span>
+</pre></div>
+</div>
+<p>If a classes.json is found the above import will try to read the JSON and convert it following the rules described above. It it fails (due to permisssions, or malformed JSON for instance), and <code class="docutils literal"><span class="pre">ImportError</span></code> exception will be raised.
+Assuming though that the above import works, with the JSON example above, then a python module is created, and can be used as any normal module:</p>
+</div>
+<div class="section" id="module-data-attributes">
+<h3>Module Data Attributes<a class="headerlink" href="#module-data-attributes" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Module attributes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">classes</span><span class="o">.</span><span class="n">__author__</span><span class="p">,</span> <span class="n">classes</span><span class="o">.</span><span class="n">__version__</span>
+<span class="go">u&#39;Tony&#39;, u&#39;0.1&#39;</span>
+</pre></div>
+</div>
+<p>As per the json implementation in the python standard library, all strings are treated as unicode.</p>
+<p>By default the module has a auto generated documentation string</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">classes</span><span class="o">.</span><span class="n">__doc__</span>
+<span class="go">Module classes - Created by JSONLoader</span>
+<span class="go">   Original json data : /home/tony/Development/python/importjson/src/classes.json</span>
+<span class="go">   Generated Mon 12 Oct 2015 22:30:54 BST (UTC +0100)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">dir</span><span class="p">(</span><span class="n">classes</span><span class="p">)</span>
+<span class="go">[&#39;__builtins__&#39;, &#39;__doc__&#39;, &#39;__file__&#39;, &#39;__json__&#39;, &#39;__loader__&#39;, &#39;__name__&#39;, &#39;__package__&#39;, &#39;__version__&#39;, &#39;__author__&#39;,&#39;point&#39;]</span>
+</pre></div>
+</div>
+<p>As can be seen from the <strong>``dir``</strong> listing above there are a number of special module variables :</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>``__builtins__``</strong> : as per all modules this is the standard python builtins modules</li>
+<li><strong>``__doc__``</strong> : as demonstrated above this is the module documentation string (either the auto generated or defined in the json file).</li>
+<li><strong>``__file__``</strong> : this is the full path to the json file - in a normal module this would be the path of the <code class="docutils literal"><span class="pre">.py</span></code> or <code class="docutils literal"><span class="pre">.pyc</span></code> file</li>
+<li><strong>``__json__``</strong> : the original json file imported as a dictionary. It is included for interest only, it should not ever be necessary to use the data in this dictionary (as it has all been converted to the specific module data attributes, classes and other content).</li>
+<li><strong>``__loader__``</strong> : This is the custom loader object (which the importjson library implements).</li>
+<li><strong>``__name__``</strong> : As with all other modules - this is the fully qualified module name.</li>
+<li><strong>``__package__``</strong> : This is False, as the json file cannot ever define a package</li>
+</ul>
+</div></blockquote>
+<p>In the above output the <strong>``__version__``</strong> and <strong>``__author__``</strong> variables are not special variables - as they are defined by the json file.</p>
+</div>
+<div class="section" id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h3>
+<p>The <strong>``point``</strong> dictionary in the example json file will have been converted to the <cite>classes.point</cite> class.</p>
+<p>The classes which are created have all the properties you might expect - for instance as defined by the <strong>``__doc__``</strong> and the <strong>``__class__attributes__``</strong> dictionary in  the json file we can define class data attributes (see <a class="reference internal" href="Specification.html"><em>Details</em></a> for details)</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">_val1</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">_val2</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">__doc__</span>
+<span class="go">&#39;Example class built from json&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="creating-instances">
+<h3>Creating Instances<a class="headerlink" href="#creating-instances" title="Permalink to this headline">¶</a></h3>
+<p>There is nothing special about these classes, instances of these classes can be created in just the same way as other classes.</p>
+<p>Instances which are created from these classes have the expected Instance data attributes with default values derived from the relevant entries in the json. Instance Data Attributes can be retrieved by name (as expected).</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">inst</span> <span class="o">=</span> <span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inst</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">inst</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">inst</span><span class="o">.</span><span class="n">colour</span>
+<span class="go">0, 0, [0, 0, 0]</span>
+</pre></div>
+</div>
+<p>The class initialiser accepts both keyword and position arguments; if positional arguments are used the arguemnts appear in the order that they are defined within the JSON file.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">insta</span> <span class="o">=</span> <span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">insta</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">insta</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">insta</span><span class="o">.</span><span class="n">colour</span>
+<span class="go">0, 1, [0, 0, 0]</span>
+</pre></div>
+</div>
+<p>Arguments to the initializer can be keyword arguments too - using the same names in the json file.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">instb</span> <span class="o">=</span> <span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="n">colour</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">instb</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">instb</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">instb</span><span class="o">.</span><span class="n">colour</span>
+<span class="go">0, 0, [1, 1, 1]</span>
+</pre></div>
+</div>
+<p>Instance Data attributes are implemented as data descriptors, and so attributes are accessed using the normal dot syntax :</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">insta</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">23</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">insta</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">insta</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">insta</span><span class="o">.</span><span class="n">colour</span>
+<span class="go">23, 0, [0,0,0]</span>
+</pre></div>
+</div>
+<p>More details are available :</p>
+<ul class="simple">
+<li>Detailed Specification of the JSON format : <a class="reference internal" href="Specification.html"><em>Details</em></a></li>
+<li>Type and range checking of Instance Data Attributes : <a class="reference internal" href="Constraints.html"><em>Constraints</em></a></li>
+<li>Known Issues and Gotchas : <a class="reference internal" href="ExtraInfo.html#shortcomings"><span>Shortcomings</span></a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Constraints.html" class="btn btn-neutral float-right" title="Constraints" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="importjson : Import json data into a python application" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Tony Flury.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1a7',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
