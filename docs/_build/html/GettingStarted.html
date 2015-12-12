@@ -90,11 +90,13 @@
 <li class="toctree-l3"><a class="reference internal" href="#module-data-attributes">Module Data Attributes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#creating-instances">Creating Instances</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#instance-initialiser">Instance Initialiser</a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Constraints.html">Constraints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Specification.html">Details</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ExtraInfo.html">Extra Information</a></li>
 </ul>
@@ -144,17 +146,17 @@
   <div class="section" id="getting-started">
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="json-format">
-<h2>Json Format<a class="headerlink" href="#json-format" title="Permalink to this headline">¶</a></h2>
-<p>By default <cite>importjson</cite> creates the module according to some simple rules (see <a class="reference internal" href="Specification.html"><em>Details</em></a> for exact details on the required format for the json) :</p>
+<span id="index-0"></span><h2>Json Format<a class="headerlink" href="#json-format" title="Permalink to this headline">¶</a></h2>
+<p>By default <code class="docutils literal"><span class="pre">importjson</span></code> creates the module according to some simple rules (see <a class="reference internal" href="Specification.html"><em>Details</em></a> for exact details on the required format for the json) :</p>
 <ul class="simple">
-<li>The json file must define a dictionary - i.e. the first and last characters must be a <cite>{</cite> and <cite>}</cite> respectively</li>
+<li>The json file must define a dictionary - i.e. the first and last characters must be a <code class="docutils literal"><span class="pre">{</span></code> and <code class="docutils literal"><span class="pre">}</span></code> respectively</li>
 <li>name values in the top-level dictionary are converted to module data attributes</li>
 <li>sub-dictionaries in the top-level dictionary are converted to classes - the name of the dictionary becomes the name of the class</li>
 <li>name value pairs in the class dictionaries are converted to instance data attributes with a few expections :<ul>
-<li>a name of <cite>__doc__</cite> can be used to define the documentation string for the class</li>
-<li>a name of <cite>__parent__</cite> can be used to define that the class is subclassed from another class within the json file.</li>
-<li>a name of <cite>__class_attributes__</cite> can be used to define class data attributes (rather than instance attributes). name/value pairs in the <cite>__class_attributes__</cite> dictionary are converted to class data attributes with the appropriate name and starting value.</li>
-<li>a name of <cite>__constraints__</cite> can be used to define type, range and other constraints for the instance data attributes (See <a class="reference internal" href="Constraints.html"><em>Constraints</em></a> for details on how to specify constraints)</li>
+<li>a name of <code class="docutils literal"><span class="pre">__doc__</span></code> can be used to define the documentation string for the class</li>
+<li>a name of <code class="docutils literal"><span class="pre">__parent__</span></code> can be used to define that the class is subclassed from another class within the json file.</li>
+<li>a name of <code class="docutils literal"><span class="pre">__class_attributes__</span></code> can be used to define class data attributes (rather than instance attributes). name/value pairs in the <code class="docutils literal"><span class="pre">__class_attributes__</span></code> dictionary are converted to class data attributes with the appropriate name and starting value.</li>
+<li>a name of <code class="docutils literal"><span class="pre">__constraints__</span></code> can be used to define type, range and other constraints for the instance data attributes (See <a class="reference internal" href="Constraints.html"><em>Constraints</em></a> for details on how to specify constraints)</li>
 </ul>
 </li>
 <li>within a class dictionary - any name/value pairs where the value is a dictionary is defined as instance data variable with a default value of a dictionary.</li>
@@ -162,15 +164,15 @@
 <p>You can define multiple classes per json file.</p>
 </div>
 <div class="section" id="search-path">
-<h2>Search Path<a class="headerlink" href="#search-path" title="Permalink to this headline">¶</a></h2>
-<p>The <cite>importjson</cite> library will look for json files across all directories and files specified in <cite>sys.path</cite>, ie. the same search path as normal
-python modules. With the <cite>importjson</cite> library in use it will take any attempted import first and try to find a relevant JSON file to import, and
-only if it is unable to find a JSON file of the appropriate name to import in any <cite>sys.path</cite> entry will it then hand over to the default python import to search for .py or .pyc files. This means that for instance if you have <cite>classes.json</cite> and <cite>classes.py</cite> in the same directory or package and your code either implicitly or explicitly imports <cite>classes</cite>, then classes.json file will be found first and will be imported and the classes.py file will be effectively hidden, and cannot be imported. This will cause unexpected behaviour unless you are careful about your file naming.</p>
+<span id="index-1"></span><h2>Search Path<a class="headerlink" href="#search-path" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">importjson</span></code> library will look for json files across all directories and files specified in <code class="docutils literal"><span class="pre">sys.path</span></code>, ie. the same search path as normal
+python modules. With the <code class="docutils literal"><span class="pre">importjson</span></code> library in use it will take any attempted import first and try to find a relevant JSON file to import, and
+only if it is unable to find a JSON file of the appropriate name to import in any <code class="docutils literal"><span class="pre">sys.path</span></code> entry will it then hand over to the default python import to search for .py or .pyc files. This means that for instance if you have <code class="docutils literal"><span class="pre">classes.json</span></code> and <code class="docutils literal"><span class="pre">classes.py</span></code> in the same directory or package and your code either implicitly or explicitly imports <code class="docutils literal"><span class="pre">classes</span></code>, then classes.json file will be found first and will be imported and the classes.py file will be effectively hidden, and cannot be imported. This will cause unexpected behaviour unless you are careful about your file naming.</p>
 </div>
 <div class="section" id="example-json">
-<h2>Example Json<a class="headerlink" href="#example-json" title="Permalink to this headline">¶</a></h2>
+<span id="index-2"></span><h2>Example Json<a class="headerlink" href="#example-json" title="Permalink to this headline">¶</a></h2>
 <p>Using the following json file as an example to illustrate the key features of the importjson library:</p>
-<p>Place the json file called <cite>classes.json</cite> exists in your applications current directory</p>
+<p>Place the json file called <code class="docutils literal"><span class="pre">classes.json</span></code> exists in your applications current directory</p>
 <div class="highlight-json"><div class="highlight"><pre><span class="p">{</span>
     <span class="nt">&quot;__version__&quot;</span><span class="p">:</span><span class="s2">&quot;0.1&quot;</span><span class="p">,</span>
     <span class="nt">&quot;__author__&quot;</span><span class="p">:</span><span class="s2">&quot;Tony&quot;</span><span class="p">,</span>
@@ -188,7 +190,7 @@ only if it is unable to find a JSON file of the appropriate name to import in an
 </pre></div>
 </div>
 <div class="section" id="importing-the-json-file">
-<h3>Importing the JSON file<a class="headerlink" href="#importing-the-json-file" title="Permalink to this headline">¶</a></h3>
+<span id="index-3"></span><h3>Importing the JSON file<a class="headerlink" href="#importing-the-json-file" title="Permalink to this headline">¶</a></h3>
 <p>Importing this json file is easy :</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">importjson</span> <span class="c"># Importjson library - must be imported before any json files</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">classes</span>          <span class="c"># Will import classes.json</span>
@@ -198,7 +200,7 @@ only if it is unable to find a JSON file of the appropriate name to import in an
 Assuming though that the above import works, with the JSON example above, then a python module is created, and can be used as any normal module:</p>
 </div>
 <div class="section" id="module-data-attributes">
-<h3>Module Data Attributes<a class="headerlink" href="#module-data-attributes" title="Permalink to this headline">¶</a></h3>
+<span id="index-4"></span><h3>Module Data Attributes<a class="headerlink" href="#module-data-attributes" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="c"># Module attributes</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">classes</span><span class="o">.</span><span class="n">__author__</span><span class="p">,</span> <span class="n">classes</span><span class="o">.</span><span class="n">__version__</span>
 <span class="go">u&#39;Tony&#39;, u&#39;0.1&#39;</span>
@@ -216,24 +218,24 @@ Assuming though that the above import works, with the JSON example above, then a
 <span class="go">[&#39;__builtins__&#39;, &#39;__doc__&#39;, &#39;__file__&#39;, &#39;__json__&#39;, &#39;__loader__&#39;, &#39;__name__&#39;, &#39;__package__&#39;, &#39;__version__&#39;, &#39;__author__&#39;,&#39;point&#39;]</span>
 </pre></div>
 </div>
-<p>As can be seen from the <strong>``dir``</strong> listing above there are a number of special module variables :</p>
+<p>As can be seen from the <code class="docutils literal"><span class="pre">dir</span></code> listing above there are a number of special module variables :</p>
 <blockquote>
 <div><ul class="simple">
-<li><strong>``__builtins__``</strong> : as per all modules this is the standard python builtins modules</li>
-<li><strong>``__doc__``</strong> : as demonstrated above this is the module documentation string (either the auto generated or defined in the json file).</li>
-<li><strong>``__file__``</strong> : this is the full path to the json file - in a normal module this would be the path of the <code class="docutils literal"><span class="pre">.py</span></code> or <code class="docutils literal"><span class="pre">.pyc</span></code> file</li>
-<li><strong>``__json__``</strong> : the original json file imported as a dictionary. It is included for interest only, it should not ever be necessary to use the data in this dictionary (as it has all been converted to the specific module data attributes, classes and other content).</li>
-<li><strong>``__loader__``</strong> : This is the custom loader object (which the importjson library implements).</li>
-<li><strong>``__name__``</strong> : As with all other modules - this is the fully qualified module name.</li>
-<li><strong>``__package__``</strong> : This is False, as the json file cannot ever define a package</li>
+<li><code class="docutils literal"><span class="pre">__builtins__</span></code> : as per all modules this is the standard python builtins modules</li>
+<li><code class="docutils literal"><span class="pre">__doc__</span></code> : as demonstrated above this is the module documentation string (either the auto generated or defined in the json file).</li>
+<li><code class="docutils literal"><span class="pre">__file__</span></code> : this is the full path to the json file - in a normal module this would be the path of the <code class="docutils literal"><span class="pre">.py</span></code> or <code class="docutils literal"><span class="pre">.pyc</span></code> file</li>
+<li><code class="docutils literal"><span class="pre">__json__</span></code> : the original json file imported as a dictionary. It is included for interest only, it should not ever be necessary to use the data in this dictionary (as it has all been converted to the specific module data attributes, classes and other content).</li>
+<li><code class="docutils literal"><span class="pre">__loader__</span></code> : This is the custom loader object (which the importjson library implements).</li>
+<li><code class="docutils literal"><span class="pre">__name__</span></code> : As with all other modules - this is the fully qualified module name.</li>
+<li><code class="docutils literal"><span class="pre">__package__</span></code> : This is False, as the json file cannot ever define a package</li>
 </ul>
 </div></blockquote>
-<p>In the above output the <strong>``__version__``</strong> and <strong>``__author__``</strong> variables are not special variables - as they are defined by the json file.</p>
+<p>In the above output the <code class="docutils literal"><span class="pre">__version__</span></code> and <code class="docutils literal"><span class="pre">__author__</span></code> variables are not special variables - as they are defined by the json file.</p>
 </div>
 <div class="section" id="classes">
-<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h3>
-<p>The <strong>``point``</strong> dictionary in the example json file will have been converted to the <cite>classes.point</cite> class.</p>
-<p>The classes which are created have all the properties you might expect - for instance as defined by the <strong>``__doc__``</strong> and the <strong>``__class__attributes__``</strong> dictionary in  the json file we can define class data attributes (see <a class="reference internal" href="Specification.html"><em>Details</em></a> for details)</p>
+<span id="index-5"></span><h3>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal"><span class="pre">point</span></code> dictionary in the example json file will have been converted to the <cite>classes.point</cite> class.</p>
+<p>The classes which are created have all the properties you might expect - for instance as defined by the <code class="docutils literal"><span class="pre">__doc__</span></code> and the <code class="docutils literal"><span class="pre">__class__attributes__</span></code> dictionary in  the json file we can define class data attributes (see <a class="reference internal" href="Specification.html"><em>Details</em></a> for details)</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">_val1</span>
 <span class="go">1</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">_val2</span>
@@ -244,7 +246,7 @@ Assuming though that the above import works, with the JSON example above, then a
 </div>
 </div>
 <div class="section" id="creating-instances">
-<h3>Creating Instances<a class="headerlink" href="#creating-instances" title="Permalink to this headline">¶</a></h3>
+<span id="index-6"></span><h3>Creating Instances<a class="headerlink" href="#creating-instances" title="Permalink to this headline">¶</a></h3>
 <p>There is nothing special about these classes, instances of these classes can be created in just the same way as other classes.</p>
 <p>Instances which are created from these classes have the expected Instance data attributes with default values derived from the relevant entries in the json. Instance Data Attributes can be retrieved by name (as expected).</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">inst</span> <span class="o">=</span> <span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="p">()</span>
@@ -252,6 +254,9 @@ Assuming though that the above import works, with the JSON example above, then a
 <span class="go">0, 0, [0, 0, 0]</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="instance-initialiser">
+<span id="index-7"></span><h3>Instance Initialiser<a class="headerlink" href="#instance-initialiser" title="Permalink to this headline">¶</a></h3>
 <p>The class initialiser accepts both keyword and position arguments; if positional arguments are used the arguemnts appear in the order that they are defined within the JSON file.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">insta</span> <span class="o">=</span> <span class="n">classes</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">insta</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">insta</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">insta</span><span class="o">.</span><span class="n">colour</span>
@@ -270,12 +275,14 @@ Assuming though that the above import works, with the JSON example above, then a
 <span class="go">23, 0, [0,0,0]</span>
 </pre></div>
 </div>
-<p>More details are available :</p>
-<ul class="simple">
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<ul class="last simple">
 <li>Detailed Specification of the JSON format : <a class="reference internal" href="Specification.html"><em>Details</em></a></li>
 <li>Type and range checking of Instance Data Attributes : <a class="reference internal" href="Constraints.html"><em>Constraints</em></a></li>
 <li>Known Issues and Gotchas : <a class="reference internal" href="ExtraInfo.html#shortcomings"><span>Shortcomings</span></a></li>
 </ul>
+</div>
 </div>
 </div>
 </div>
