@@ -554,6 +554,8 @@ class MultipleAttrClass(ClassTests):
                 }
     }
 }""")
+        self.assertIs(sys.modules[self.mod_name], self.tm)
+
 
     def tearDown(self):
         del sys.path[-1]
@@ -623,14 +625,6 @@ class MultipleAttrClassImplicit(MultipleAttrClass):
 class ClassAttributes(ClassTests):
     def class_attr_not_dict(self, alt_type):
         """Method to be overriden - create module where the class attributes is of type not dictionary"""
-        pass
-
-    def normalclass(self):
-        """Override to create the normal class"""
-        pass
-
-    def class_doc_only(self, doc_string=""):
-        """Override to create json with class defined with __doc__ only"""
         pass
 
     def setUp(self):

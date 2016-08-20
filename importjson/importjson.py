@@ -223,7 +223,7 @@ class JSONLoader(object):
     def {attr_name}(self, value):
         cons = self._get_constraints(attr_name='{attr_name}' )
         if cons and cons.get("read_only",False):
-            raise Value.Error("Range Error : '{attr_name}' is read_only")
+            raise ValueError("Range Error : '{attr_name}' is read_only")
 
         try:
             nv = self._constrain_{attr_name}(value )
