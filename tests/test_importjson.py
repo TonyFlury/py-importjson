@@ -848,22 +848,32 @@ class ClassInheritance(ClassTests):
         self.assertEqual((insta.x, instb.x), (1, 3))
         self.assertEqual((insta.y, instb.y), (2, 4))
 
-
 class ClassInheritanceExplicit(ClassInheritance):
     def setUp(self):
         self.createModule("""
 {
     "__classes__":{
         "classa":{
-            "__doc__":"Class A",
+            "__doc__":"Class a",
                 "a1":1,
                 "a2":2
                 },
         "classb":{
-            "__doc__":"Class B",
+            "__doc__":"Class b",
             "__parent__":"classa",
                 "b1":3,
                 "b2":4
+                },
+        "classA":{
+            "__doc__":"Class A",
+                "x":1,
+                "y":2
+                },
+        "classB":{
+            "__doc__":"Class B",
+            "__parent__":"classA",
+                "x":3,
+                "y":4
                 }
     }
 }""")
