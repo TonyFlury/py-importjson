@@ -883,6 +883,17 @@ class ClassInheritanceImplicit(ClassInheritance):
         "__parent__":"classa",
             "b1":3,
             "b2":4
+            },
+    "classA":{
+        "__doc__":"Class a",
+            "x":1,
+            "y":2
+            },
+    "classB":{
+        "__doc__":"Class B",
+        "__parent__":"classA",
+            "x":3,
+            "y":4
             }
 }""")
 
