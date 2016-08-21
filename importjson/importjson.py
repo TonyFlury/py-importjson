@@ -127,9 +127,18 @@ class JSONLoader(object):
             # mc += "    pass"
             return mc
 
+        # Issue 8 - Change variable initialisation so that the initial value of child class attributes
+        # always override the initial value of the child parent class attributes of the same name.
         mc += "\n    def __init__(self, {arg_list}, *args, **kwargs):\n".format(arg_list=",".join(al))
+
+        # Super is called first to initialise parent class - see Issue 8
+        mc += "        super({}, self).__init__(*args, **kwargs)\n".format(cls_name)
+
+        # Set an initial constraints attrribute - See Issue 18 as to why this is broken
         mc += "        self._constraints = {value}\n".format(
             value=self.dictrepr(cls_dict.get("__constraints__", "{}")))
+
+        # Set the initial value of the attribute by calling self._constrain_<name>(<value)
         mc += "".join("        self._{attr_name} = self._constrain_{attr_name}({attr_value})\n".format(
             attr_name=key,
             attr_value=key if not isinstance(value, (list, dict)) else
@@ -138,7 +147,6 @@ class JSONLoader(object):
         )
                       for key, value in cls_dict.iteritems() if key not in ignore)
 
-        mc += "        super({}, self).__init__(*args, **kwargs)\n".format(cls_name)
 
         mc += """
     def _get_constraints(self, attr_name):

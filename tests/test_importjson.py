@@ -827,8 +827,8 @@ class ClassInheritance(ClassTests):
         del sys.path[-1]
         del sys.modules[self.tm.__name__]
 
-    def test_050_000_ClassInheritance(self):
-        """Import two classes - with inheritance between them"""
+    def test_050_000_ClassInheritanceNoOverrideAttr(self):
+        """Import two classes - with inheritance between them - no attributes over-ridden"""
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertTrue(inspect.isclass(self.tm.classb))
         self.assertTrue(issubclass(self.tm.classb, self.tm.classa))
@@ -838,6 +838,15 @@ class ClassInheritance(ClassTests):
         self.assertEqual((instb.a1, instb.a2), (1, 2))
         self.assertEqual((instb.b1, instb.b2), (3, 4))
 
+    def test_050_001_ClassInheritanceOverrideAttr(self):
+        """Import two classes - with inheritance between them - sub class overrides parent class attrs - test for solution of Issue 8"""
+        self.assertTrue(inspect.isclass(self.tm.classa))
+        self.assertTrue(inspect.isclass(self.tm.classb))
+        self.assertTrue(issubclass(self.tm.classb, self.tm.classa))
+        insta = self.tm.classA()
+        instb = self.tm.classB()
+        self.assertEqual((insta.x, insta.x), (1, 3))
+        self.assertEqual((instb.y, instb.y), (2, 4))
 
 class ClassInheritanceExplicit(ClassInheritance):
     def setUp(self):
@@ -845,15 +854,26 @@ class ClassInheritanceExplicit(ClassInheritance):
 {
     "__classes__":{
         "classa":{
-            "__doc__":"Class A",
+            "__doc__":"Class a",
                 "a1":1,
                 "a2":2
                 },
         "classb":{
-            "__doc__":"Class B",
+            "__doc__":"Class b",
             "__parent__":"classa",
                 "b1":3,
                 "b2":4
+                },
+        "classA":{
+            "__doc__":"Class A",
+                "x":1,
+                "y":2
+                },
+        "classB":{
+            "__doc__":"Class B",
+            "__parent__":"classA",
+                "x":3,
+                "y":4
                 }
     }
 }""")
@@ -873,6 +893,17 @@ class ClassInheritanceImplicit(ClassInheritance):
         "__parent__":"classa",
             "b1":3,
             "b2":4
+            },
+    "classA":{
+        "__doc__":"Class a",
+            "x":1,
+            "y":2
+            },
+    "classB":{
+        "__doc__":"Class B",
+        "__parent__":"classA",
+            "x":3,
+            "y":4
             }
 }""")
 
