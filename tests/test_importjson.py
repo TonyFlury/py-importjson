@@ -845,8 +845,8 @@ class ClassInheritance(ClassTests):
         self.assertTrue(issubclass(self.tm.classb, self.tm.classa))
         insta = self.tm.classA()
         instb = self.tm.classB()
-        self.assertEqual((insta.x, insta.x), (1, 3))
-        self.assertEqual((instb.y, instb.y), (2, 4))
+        self.assertEqual((insta.x, instb.x), (1, 3))
+        self.assertEqual((insta.y, instb.y), (2, 4))
 
 class ClassInheritanceExplicit(ClassInheritance):
     def setUp(self):
