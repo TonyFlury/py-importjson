@@ -827,8 +827,8 @@ class ClassInheritance(ClassTests):
         del sys.path[-1]
         del sys.modules[self.tm.__name__]
 
-    def test_050_000_ClassInheritance(self):
-        """Import two classes - with inheritance between them"""
+    def test_050_000_ClassInheritanceNoOverrideAttr(self):
+        """Import two classes - with inheritance between them - no attributes over-ridden"""
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertTrue(inspect.isclass(self.tm.classb))
         self.assertTrue(issubclass(self.tm.classb, self.tm.classa))
@@ -837,6 +837,16 @@ class ClassInheritance(ClassTests):
         self.assertEqual((insta.a1, insta.a2), (1, 2))
         self.assertEqual((instb.a1, instb.a2), (1, 2))
         self.assertEqual((instb.b1, instb.b2), (3, 4))
+
+    def test_050_001_ClassInheritanceOverrideAttr(self):
+        """Import two classes - with inheritance between them - sub class overrides parent class attrs - test for solution of Issue 8"""
+        self.assertTrue(inspect.isclass(self.tm.classa))
+        self.assertTrue(inspect.isclass(self.tm.classb))
+        self.assertTrue(issubclass(self.tm.classb, self.tm.classa))
+        insta = self.tm.classA()
+        instb = self.tm.classB()
+        self.assertEqual((insta.x, instb.x), (1, 3))
+        self.assertEqual((insta.y, instb.y), (2, 4))
 
 
 class ClassInheritanceExplicit(ClassInheritance):
