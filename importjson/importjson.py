@@ -37,7 +37,7 @@ __created__ = '11 Oct 2015'
 
 __configuration__ = {"JSONSuffixes": [".json"]}
 __obsolete__ = {"AllDictionariesAsClasses":
-                    "No longer required - the different forms of json are automatically recognised"}
+                "No longer required - the different forms of json are automatically recognised"}
 
 
 def configure(key, value):
@@ -69,7 +69,7 @@ class JSONLoader(object):
 
            Implemented as a generator to allow for multiple suffixes in future.
         """
-        # Bugfix #1 - sys.path not being searched
+        # Bug fix #1 - sys.path not being searched
         path = path if path else sys.path
 
         # Extract the module name component only from the fully qualified module name
@@ -134,7 +134,7 @@ class JSONLoader(object):
         # Super is called first to initialise parent class - see Issue 8
         mc += "        super({}, self).__init__(*args, **kwargs)\n".format(cls_name)
 
-        # Set an initial constraints attrribute - See Issue 18 as to why this is broken
+        # Set an initial constraints attribute - See Issue 18 as to why this is broken
         mc += "        self._constraints = {value}\n".format(
             value=self.dictrepr(cls_dict.get("__constraints__", "{}")))
 
@@ -146,7 +146,6 @@ class JSONLoader(object):
                 attr_value=repr(value), attr_name=key)
         )
                       for key, value in cls_dict.iteritems() if key not in ignore)
-
 
         mc += """
     def _get_constraints(self, attr_name):
@@ -215,8 +214,7 @@ class JSONLoader(object):
                         max=cons["max"] ))
 
         return value
-    """.format(class_list=",".join(["'{0}':{0}".format(cls) for cls in cls_list])
-               )
+    """.format(class_list=",".join(["'{0}':{0}".format(cls) for cls in cls_list]))
 
         ptemplate = """
     def _constrain_{attr_name}(self, value):
