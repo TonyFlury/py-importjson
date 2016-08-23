@@ -1,2 +1,2 @@
-from importjson import *
+from .importjson import *
 

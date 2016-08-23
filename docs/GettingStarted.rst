@@ -120,7 +120,7 @@ In the above output the ``__version__`` and ``__author__`` variables are not spe
 Classes
 ^^^^^^^
 
-The ``point`` dictionary in the example json file will have been converted to the `classes.point` class.
+The ``point`` dictionary in the example json file will have been converted to the ``classes.point`` class.
 
 The classes which are created have all the properties you might expect - for instance as defined by the ``__doc__`` and the ``__class__attributes__`` dictionary in  the json file we can define class data attributes (see :doc:`Specification` for details)
 

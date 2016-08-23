@@ -11,16 +11,22 @@ Testable Statements :
     Can I <Boolean statement>
     ....
 """
-import unittest
+from __future__ import print_function
+
+from distutils.version import StrictVersion as StVers
+
+import os
+import sys
+import inspect
+
 from TempDirectoryContext import TempDirectoryContext as TestDirCont
 from random import sample
-from string import lowercase
-import sys
+from string import ascii_lowercase
+
 import importlib
 import importjson
-import os
-import inspect
-from distutils.version import StrictVersion as StVers
+
+import unittest
 
 __version__ = "0.1"
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
@@ -29,20 +35,18 @@ __created__ = '16 Oct 2015'
 _installation_failed = False
 _imports_failed = False
 
-
 def set_module_flag(name, val):
     sys.modules[__name__].setattr(name, val)
-
 
 def get_module_flag(name):
     return sys.modules[__name__].getattr(name)
 
-
 def cmp_version(x, y):
-    return cmp(StVers(x), StVers(y))
+    return -1 if StVers(x) < StVers(y) else (+1 if StVers(x) > StVers(y) else 0)
 
 
 class Installation(unittest.TestCase):
+    """Test Installation of the import hooks"""
     def setUp(self):
         pass
 
@@ -57,13 +61,14 @@ class Installation(unittest.TestCase):
         """Confirm correct version - expecting 0.0.1a1 or better"""
         self.assertTrue(cmp_version(importjson.version.__version__, "0.0.1a1") > 0)
 
-    @unittest.skipIf(cmp_version(importjson.version.__version__, "0.0.1a5") < 0,
-                     "Only gives exception on v0.0.1a5 or higher")
+    @unittest.skip("skipped")
+    #@unittest.skipIf(cmp_version(importjson.version.__version__, "0.0.1a5") < 0,
+    #                 "Only gives exception on v0.0.1a5 or higher")
     def test_000_010_configurationObsolete(self):
         """Test obsolete config item - will only be tested when v0.01a5"""
         with self.assertRaises(ValueError) as cm:
             importjson.configure("AllDictionariesAsClasses", True)
-            print cm.exception
+            print(cm.exception)
 
     def test_000_010_configurationValid(self):
         """Test obsolete config item"""
@@ -72,7 +77,7 @@ class Installation(unittest.TestCase):
 
         importjson.configure("JSONSuffixes", [".json"])
 
-    def test_000_010_configurationInvalid(self):
+    def test_000_011_configurationInvalid(self):
         """Test unknown config item"""
         with self.assertRaises(ValueError):
             importjson.configure("InvalidConfig", True)
@@ -81,7 +86,8 @@ class Installation(unittest.TestCase):
             importjson.get_configure("InvalidConfig")
 
 
-class ModuleContentTest(unittest.TestCase):
+class ModuleContentTest(object):
+    """To be subclassed - not executed directly"""
     def setUp(self):
         self.tm, self.mod_name = None, None
 
@@ -95,9 +101,9 @@ class ModuleContentTest(unittest.TestCase):
     @staticmethod
     def _random_name():
         """Generate previously unused random name"""
-        name = "".join("".join(sample(lowercase, 7)))
+        name = "".join("".join(sample(ascii_lowercase, 7)))
         while name in ModuleContentTest._module_name:
-            name = "".join("".join(sample(lowercase, 7)))
+            name = "".join("".join(sample(ascii_lowercase, 7)))
         return name
 
     def createModule(self, json_str, perm_error=False):
@@ -119,7 +125,8 @@ class ModuleContentTest(unittest.TestCase):
         self.tm = importlib.import_module(self.mod_name)
 
 
-class ModuleData(ModuleContentTest):
+class ModuleData(ModuleContentTest,unittest.TestCase):
+    """Test Module level data, __loader__, __file__ etc"""
     def setUp(self):
         super(ModuleData, self).setUp()
 
@@ -226,7 +233,8 @@ class ModuleData(ModuleContentTest):
         self.assertEqual(newm.__file__, p1)
 
 
-class ModuleDataErrors(ModuleContentTest):
+class ModuleDataErrors(ModuleContentTest,unittest.TestCase):
+    """Check for module data under error conditions"""
     def setUp(self):
         super(ModuleDataErrors, self).setUp()
 
@@ -278,7 +286,8 @@ class ModuleDataErrors(ModuleContentTest):
             self.createModule("{}", perm_error=True)
 
 
-class ModuleAttributes(ModuleContentTest):
+class ModuleAttributes(ModuleContentTest,unittest.TestCase):
+    """Test simple imports of JSON files with module level attributes"""
     def setUp(self):
         super(ModuleAttributes, self).setUp()
 
@@ -313,7 +322,6 @@ class ModuleAttributes(ModuleContentTest):
 {
     "test_value":"Hello"
 }""")
-
         self.assertIs(sys.modules[self.mod_name], self.tm)
         self.assertEqual(self.tm.test_value, "Hello")
 
@@ -390,11 +398,8 @@ class ModuleAttributes(ModuleContentTest):
         self.assertEqual(self.tm.__doc__, "Override documentation string")
 
 
-class ClassTests(ModuleContentTest):
-    pass
-
-
-class SingleAttrClass(ClassTests):
+class SingleAttrClass(ModuleContentTest):
+    """Define common set of tests for both implict and explicit JSON cases"""
     def setUp(self):
         pass
 
@@ -457,11 +462,13 @@ class SingleAttrClass(ClassTests):
         self.assertEqual(inst.attr, "Hello")
 
 
-class SingAttrClassExplicit(SingleAttrClass):
+class SingAttrClassExplicit(SingleAttrClass,unittest.TestCase):
+    """Test explicitly defined classes cases"""
     def setUp(self):
         pass
 
     def standard_case(self):
+        """The standard boiler plate json"""
         self.createModule("""
 {
     "__classes__":{
@@ -473,6 +480,7 @@ class SingAttrClassExplicit(SingleAttrClass):
         self.assertIs(sys.modules[self.mod_name], self.tm)
 
     def error_class_def(self, alt_type):
+        """Force an error by producing JSON which isn't the reqd format"""
         self.createModule("""
 {
     "__classes__":{
@@ -482,6 +490,7 @@ class SingAttrClassExplicit(SingleAttrClass):
         self.assertIs(sys.modules[self.mod_name], self.tm)
 
     def error_classes_json(self, alt_type):
+        """Force an error by producing JSON which isn't the reqd format"""
         self.createModule("""
 {
     "__classes__":%s
@@ -529,7 +538,9 @@ class SingAttrClassExplicit(SingleAttrClass):
             self.error_classes_json(alt_type=float)
 
 
-class SingleAttrClassImplicit(SingleAttrClass):
+class SingleAttrClassImplicit(SingleAttrClass,unittest.TestCase):
+    """Test implicit classes defined in the JSON
+        all top level directories are classes"""
     def setUp(self):
         pass
 
@@ -543,7 +554,7 @@ class SingleAttrClassImplicit(SingleAttrClass):
         self.assertIs(sys.modules[self.mod_name], self.tm)
 
 
-class MultipleAttrClass(ClassTests):
+class MultipleAttrClass(ModuleContentTest):
     def setUp(self):
         self.createModule("""
 {
@@ -555,7 +566,6 @@ class MultipleAttrClass(ClassTests):
     }
 }""")
         self.assertIs(sys.modules[self.mod_name], self.tm)
-
 
     def tearDown(self):
         del sys.path[-1]
@@ -598,7 +608,7 @@ class MultipleAttrClass(ClassTests):
         self.assertEqual(inst.attr2, "Goodbye")
 
 
-class MultipleAttrClassExplicit(MultipleAttrClass):
+class MultipleAttrClassExplicit(MultipleAttrClass,unittest.TestCase):
     def setUp(self):
         self.createModule("""
 {
@@ -611,7 +621,7 @@ class MultipleAttrClassExplicit(MultipleAttrClass):
 }""")
 
 
-class MultipleAttrClassImplicit(MultipleAttrClass):
+class MultipleAttrClassImplicit(MultipleAttrClass,unittest.TestCase):
     def setUp(self):
         self.createModule("""
 {
@@ -622,9 +632,32 @@ class MultipleAttrClassImplicit(MultipleAttrClass):
 }""")
 
 
-class ClassAttributes(ClassTests):
+class ClassAttributes(ModuleContentTest):
+    """Common defined test cases for testing class level attributes"""
+
+    def normalclass(self):
+        """Boiler Plate JSON for well defined class"""
+        pass
+
     def class_attr_not_dict(self, alt_type):
-        """Method to be overriden - create module where the class attributes is of type not dictionary"""
+        """Boiler Plate JSON for mal-defined class
+          __class__attributes should be a dictionary"""
+        pass
+
+    def class_doc_only(self, doc_string=""):
+        """Boiler plate JSON for class with __doc__ only"""
+        pass
+
+    def class_empty(self):
+        """Boiler plate JSON for totally empty class"""
+        pass
+
+    def class_empty_with_constraints(self):
+        """Boiler plate JSON for totally empty class with empty constraints"""
+        pass
+
+    def class_attributes_only(self):
+        """Boiler plate JSON for class with class attributes only"""
         pass
 
     def setUp(self):
@@ -668,158 +701,171 @@ class ClassAttributes(ClassTests):
         with self.assertRaises(ImportError):
             self.class_attr_not_dict(alt_type=str)
 
-
-class ClassAttributesExplicit(ClassAttributes):
-    def normalclass(self):
-        self.createModule("""
-{
-    "__classes__":{
-        "classa":{
-            "__doc__":"Class A",
-            "__class_attributes__":{
-                "cls_attr1":-1,
-                "cls_attr2":0.1
-                },
-                "attr1":1,
-                "attr2":2
-                }
-    }
-}""")
-
-    def class_attr_not_dict(self, alt_type):
-        self.createModule("""
-{
-    "__classes__":{
-        "classa":{
-            "__doc__":"Class A",
-            "__class_attributes__":%s,
-                "attr1":1,
-                "attr2":2
-                }
-    }
-}""" % alt_type())
-
-    def class_doc_only(self, doc_string=""):
-        self.createModule("""
-{
-    "__classes__":{
-        "classa":{
-            "__doc__":"%s"
-        }
-    }
-}""" % doc_string)
-
-    def test_040_020_ClassNoDataInstanceAttributes(self):
-        """ Test that if class has no attributes - and has no other contents (not class attributes)"""
-        self.createModule("""
-{
-        "__classes__":{
-            "classa":{
-                    }
-        }
-}""")
+    def test_040_020_ClassEmpty(self):
+        """ Test that if class has no attributes"""
+        self.class_empty()
         self.assertTrue(inspect.isclass(self.tm.classa))
 
-    def test_040_021_ClassNoDataInstanceAttributes1(self):
-        """ Test that if class has no attributes - but has other contents (not class attributes)"""
-        self.createModule("""
-{
-        "__classes__":{
-            "classa":{
-                "__constraints__":{}
-                    }
-        }
-}""")
+    def test_040_021_ClassEmptyWithConstraints(self):
+        """ Test for empty class with empty constraints"""
+        self.class_empty_with_constraints()
         self.assertTrue(inspect.isclass(self.tm.classa))
 
     def test_040_022_ClassAttributesOnly(self):
         """ Test that if class has no attributes - but has other contents (not class attributes)"""
-        self.createModule("""
-{
-        "__classes__":{
-            "classa":{
-                "__class_attributes__":{
-                    "attr1":1,
-                    "attr2":2
-                }
-            }
-        }
-}""")
+        self.class_attributes_only()
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertEqual(self.tm.classa.attr1, 1)
         self.assertEqual(self.tm.classa.attr2, 2)
 
 
-class ClassAttributesImplicit(ClassAttributes):
+class ClassAttributesExplicit(ClassAttributes,unittest.TestCase):
+    """Test class creation with class attributes, using explicit syntax"""
+
     def normalclass(self):
+        """Boiler Plate JSON for well defined class"""
         self.createModule("""
-{
-    "classa":{
-        "__doc__":"Class A",
-        "__class_attributes__":{
-            "cls_attr1":-1,
-            "cls_attr2":0.1
-            },
-            "attr1":1,
-            "attr2":2
-            }
-}""")
+            {
+                "__classes__":{
+                    "classa":{
+                        "__doc__":"Class A",
+                        "__class_attributes__":{
+                            "cls_attr1":-1,
+                            "cls_attr2":0.1
+                            },
+                            "attr1":1,
+                            "attr2":2
+                            }
+                }
+            }""")
 
     def class_attr_not_dict(self, alt_type):
+        """Boiler Plate JSON for mal-defined class
+          __class__attributes should be a dictionary"""
         self.createModule("""
-{
-        "classa":{
-            "__doc__":"Class A",
-            "__class_attributes__":%s,
-                "attr1":1,
-                "attr2":2
+            {
+                "__classes__":{
+                    "classa":{
+                        "__doc__":"Class A",
+                        "__class_attributes__":%s,
+                            "attr1":1,
+                            "attr2":2
+                            }
                 }
-}""" % alt_type())
+            }""" % alt_type())
 
     def class_doc_only(self, doc_string=""):
+        """Boiler plate JSON for class with __doc__ only"""
         self.createModule("""
-{
-    "classa":{
-        "__doc__":"%s"
-    }
-}""" % doc_string)
-
-    def test_040_020_ClassNoDataInstanceAttributes(self):
-        """ Test that if class has no attributes - but has other contents (not class attributes)"""
-        self.createModule("""
-{
-        "classa":{
+            {
+                "__classes__":{
+                    "classa":{
+                        "__doc__":"%s"
+                    }
                 }
-}""")
-        self.assertTrue(inspect.isclass(self.tm.classa))
+            }""" % doc_string)
 
-    def test_040_021_ClassNoDataInstanceAttributes1(self):
-        """ Test that if class has no attributes - but has other contents (not class attributes)"""
+    def class_empty(self):
         self.createModule("""
-{
-        "classa":{
-            "__constraints__":{}
+            {
+                    "__classes__":{
+                        "classa":{
+                                }
+                    }
+            }""")
+
+    def class_empty_with_constraints(self):
+        self.createModule("""
+            {
+                    "__classes__":{
+                        "classa":{
+                            "__constraints__":{}
+                                }
+                    }
+            }""")
+
+    def class_attributes_only(self):
+        self.createModule("""
+            {
+                    "__classes__":{
+                        "classa":{
+                            "__class_attributes__":{
+                                "attr1":1,
+                                "attr2":2
+                            }
+                        }
+                    }
+            }""")
+
+
+class ClassAttributesImplicit(ClassAttributes,unittest.TestCase):
+    """Test class creation with class attributes, using implicit syntax"""
+
+    def normalclass(self):
+        """Boiler Plate JSON for well defined class"""
+        self.createModule("""
+            {
+                "classa":{
+                    "__doc__":"Class A",
+                    "__class_attributes__":{
+                        "cls_attr1":-1,
+                        "cls_attr2":0.1
+                        },
+                        "attr1":1,
+                        "attr2":2
+                        }
+            }""")
+
+    def class_attr_not_dict(self, alt_type):
+        """Boiler Plate JSON for mal-defined class
+          __class__attributes should be a dictionary"""
+        self.createModule("""
+            {
+                    "classa":{
+                        "__doc__":"Class A",
+                        "__class_attributes__":%s,
+                            "attr1":1,
+                            "attr2":2
+                            }
+            }""" % alt_type())
+
+    def class_doc_only(self, doc_string=""):
+        """Boiler plate JSON for class with __doc__ only"""
+        self.createModule("""
+            {
+                "classa":{
+                    "__doc__":"%s"
                 }
-}""")
-        self.assertTrue(inspect.isclass(self.tm.classa))
+            }""" % doc_string)
 
-    def test_040_022_ClassAttributesOnly(self):
-        """ Test that if class has class attributes and nothing else"""
+    def class_empty(self):
         self.createModule("""
-{
-        "classa":{
-            "__class_attributes__":{
-                "attr1":1,
-                "attr2":2
-            }
-        }
-}""")
-        self.assertTrue(inspect.isclass(self.tm.classa))
-        self.assertEqual(self.tm.classa.attr1, 1)
-        self.assertEqual(self.tm.classa.attr2, 2)
+            {
+                    "classa":{
+                            }
+            }""")
+
+    def class_empty_with_constraints(self):
+        self.createModule("""
+            {
+                    "classa":{
+                        "__constraints__":{}
+                            }
+            }""")
+
+    def class_attributes_only(self):
+        self.createModule("""
+            {
+                    "classa":{
+                        "__class_attributes__":{
+                            "attr1":1,
+                            "attr2":2
+                        }
+                    }
+            }""")
 
 
-class ClassInheritance(ClassTests):
+class ClassInheritance(ModuleContentTest):
     def setUp(self):
         self.tm, self.mod_name = None, None
 
@@ -848,67 +894,69 @@ class ClassInheritance(ClassTests):
         self.assertEqual((insta.x, instb.x), (1, 3))
         self.assertEqual((insta.y, instb.y), (2, 4))
 
-class ClassInheritanceExplicit(ClassInheritance):
+
+class ClassInheritanceExplicit(ClassInheritance,unittest.TestCase):
     def setUp(self):
         self.createModule("""
-{
-    "__classes__":{
-        "classa":{
-            "__doc__":"Class a",
-                "a1":1,
-                "a2":2
-                },
-        "classb":{
-            "__doc__":"Class b",
-            "__parent__":"classa",
-                "b1":3,
-                "b2":4
-                },
-        "classA":{
-            "__doc__":"Class A",
-                "x":1,
-                "y":2
-                },
-        "classB":{
-            "__doc__":"Class B",
-            "__parent__":"classA",
-                "x":3,
-                "y":4
+            {
+                "__classes__":{
+                    "classa":{
+                        "__doc__":"Class a",
+                            "a1":1,
+                            "a2":2
+                            },
+                    "classb":{
+                        "__doc__":"Class b",
+                        "__parent__":"classa",
+                            "b1":3,
+                            "b2":4
+                            },
+                    "classA":{
+                        "__doc__":"Class A",
+                            "x":1,
+                            "y":2
+                            },
+                    "classB":{
+                        "__doc__":"Class B",
+                        "__parent__":"classA",
+                            "x":3,
+                            "y":4
+                            }
                 }
-    }
-}""")
+            }""")
 
 
-class ClassInheritanceImplicit(ClassInheritance):
+class ClassInheritanceImplicit(ClassInheritance,unittest.TestCase):
     def setUp(self):
         self.createModule("""
-{
-    "classa":{
-        "__doc__":"Class A",
-            "a1":1,
-            "a2":2
-            },
-    "classb":{
-        "__doc__":"Class B",
-        "__parent__":"classa",
-            "b1":3,
-            "b2":4
-            },
-    "classA":{
-        "__doc__":"Class a",
-            "x":1,
-            "y":2
-            },
-    "classB":{
-        "__doc__":"Class B",
-        "__parent__":"classA",
-            "x":3,
-            "y":4
-            }
-}""")
+            {
+                "classa":{
+                    "__doc__":"Class A",
+                        "a1":1,
+                        "a2":2
+                        },
+                "classb":{
+                    "__doc__":"Class B",
+                    "__parent__":"classa",
+                        "b1":3,
+                        "b2":4
+                        },
+                "classA":{
+                    "__doc__":"Class a",
+                        "x":1,
+                        "y":2
+                        },
+                "classB":{
+                    "__doc__":"Class B",
+                    "__parent__":"classA",
+                        "x":3,
+                        "y":4
+                        }
+            }""")
 
 
-class ClassAttrConstraint(ClassTests):
+class ClassAttrConstraint(ModuleContentTest,unittest.TestCase):
+    """Test the constraints model - only tested with implicit classes"""
     def setUp(self):
         self.tm, self.mod_name = None, None
 
@@ -922,16 +970,16 @@ class ClassAttrConstraint(ClassTests):
     def test_100_000_min_constraint(self):
         """Integer attribute with min constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":1,
-        "__constraints__":{
-            "a1":{
-                "min":0
+        {
+            "classa":{
+                    "a1":1,
+                "__constraints__":{
+                    "a1":{
+                        "min":0
+                        }
+                    }
                 }
-            }
-        }
-}""")
+        }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -947,16 +995,16 @@ class ClassAttrConstraint(ClassTests):
     def test_100_010_max_constraint(self):
         """Integer attribute with max constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":1,
-        "__constraints__":{
-            "a1":{
-                "max":10
-                }
-            }
-        }
-}""")
+            {
+                "classa":{
+                        "a1":1,
+                    "__constraints__":{
+                        "a1":{
+                            "max":10
+                            }
+                        }
+                    }
+            }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -972,17 +1020,17 @@ class ClassAttrConstraint(ClassTests):
     def test_100_010_min_max_constraint(self):
         """Integer attribute with min/max constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":1,
-        "__constraints__":{
-            "a1":{
-                "min":0,
-                "max":10
-                }
-            }
-        }
-}""")
+            {
+                "classa":{
+                        "a1":1,
+                    "__constraints__":{
+                        "a1":{
+                            "min":0,
+                            "max":10
+                            }
+                        }
+                    }
+            }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -1002,16 +1050,16 @@ class ClassAttrConstraint(ClassTests):
     def test_100_020_type_int_constraint(self):
         """Integer attribute with type constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":1,
-        "__constraints__":{
-            "a1":{
-                "type":"int"
-                }
-            }
-        }
-}""")
+            {
+                "classa":{
+                        "a1":1,
+                    "__constraints__":{
+                        "a1":{
+                            "type":"int"
+                            }
+                        }
+                    }
+            }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -1038,16 +1086,16 @@ class ClassAttrConstraint(ClassTests):
     def test_100_021_type_str_constraint(self):
         """String attribute with type constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":"a",
-        "__constraints__":{
-            "a1":{
-                "type":"str"
-                }
-            }
-        }
-}""")
+            {
+                "classa":{
+                        "a1":"a",
+                    "__constraints__":{
+                        "a1":{
+                            "type":"str"
+                            }
+                        }
+                    }
+            }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -1076,16 +1124,16 @@ class ClassAttrConstraint(ClassTests):
     def test_100_022_type_float_constraint(self):
         """String attribute with type constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":1.2,
-        "__constraints__":{
-            "a1":{
-                "type":"float"
-                }
-            }
-        }
-}""")
+            {
+                "classa":{
+                        "a1":1.2,
+                    "__constraints__":{
+                        "a1":{
+                            "type":"float"
+                            }
+                        }
+                    }
+            }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -1112,16 +1160,16 @@ class ClassAttrConstraint(ClassTests):
     def test_100_030_not_none_true_constraint(self):
         """String attribute with type constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":0,
-        "__constraints__":{
-            "a1":{
-                "not_none":true
-                }
-            }
-        }
-}""")
+            {
+                "classa":{
+                        "a1":0,
+                    "__constraints__":{
+                        "a1":{
+                            "not_none":true
+                            }
+                        }
+                    }
+            }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -1133,16 +1181,16 @@ class ClassAttrConstraint(ClassTests):
     def test_100_031_not_none_false_constraint(self):
         """String attribute with type constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":0,
-        "__constraints__":{
-            "a1":{
-                "not_none":false
-                }
-            }
-        }
-}""")
+            {
+                "classa":{
+                        "a1":0,
+                    "__constraints__":{
+                        "a1":{
+                            "not_none":false
+                            }
+                        }
+                    }
+            }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -1151,16 +1199,16 @@ class ClassAttrConstraint(ClassTests):
     def test_100_040_read_only_true_constraint(self):
         """String attribute with type constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":0,
-        "__constraints__":{
-            "a1":{
-                "read_only":true
-                }
-            }
-        }
-}""")
+            {
+                "classa":{
+                        "a1":0,
+                    "__constraints__":{
+                        "a1":{
+                            "read_only":true
+                            }
+                        }
+                    }
+            }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
@@ -1171,21 +1219,182 @@ class ClassAttrConstraint(ClassTests):
     def test_100_030_read_only_false_constraint(self):
         """String attribute with type constraint"""
         self.createModule("""
-{
-    "classa":{
-            "a1":0,
-        "__constraints__":{
-            "a1":{
-                "read_only":false
-                }
-            }
-        }
-}""")
+            {
+                "classa":{
+                        "a1":0,
+                    "__constraints__":{
+                        "a1":{
+                            "read_only":false
+                            }
+                        }
+                    }
+            }""")
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
         insta.a1 = 1
 
+
+class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
+    """Tests of constraints across inherited classes
+
+       Only tested using min/max on integers.
+       Should ideally test that all constraints are logically applied
+       but the constrainst architecture is the same in all cases.
+    """
+
+    def setUp(self):
+        self.tm, self.mod_name = None, None
+
+    def tearDown(self):
+        del sys.path[-1]
+        if self.tm:
+            del sys.modules[self.tm.__name__]
+        self.tm, self.mod_name = None, None
+
+    def test_110_010_superclass_constraintsonly(self):
+        """Test that superclass constraints are maintained when the subclass doesn't have any constraints defined"""
+        self.createModule("""
+        {
+            "classa":{
+                    "a1":1,
+                "__constraints__":{
+                        "a1":{
+                            "min":0
+                            }
+                        }
+                    },
+            "classb":{
+                "__parent__":"classa",
+                    "a1":2
+                    }
+        }""")
+        insta = self.tm.classa()
+        instb = self.tm.classb()
+
+        # With no constraints on classb - classa constraints should apply
+        with self.assertRaises(ValueError):
+            instb.a1 = -1
+
+    def test_110_015_superclass_constraints_subclass_empty(self):
+        """Test that superclass constraints are maintained when the subclass has a blank set of constraints defined"""
+        self.createModule("""
+        {
+            "classa":{
+                    "a1":1,
+                "__constraints__":{
+                        "a1":{
+                            "min":0
+                            }
+                        }
+                    },
+            "classb":{
+                    "__parent__":"classa",
+                    "a1":2,
+                "__constraints__":{}
+                    }
+        }""")
+        insta = self.tm.classa()
+        instb = self.tm.classb()
+
+        # With no constraints on classb - classa constraints should apply
+        with self.assertRaises(ValueError):
+            instb.a1 = -1
+
+
+    def test_110_020_superclass_constraints_subclass_constraints_overlap(self):
+        """Test that superclass constraints are maintained when the subclass has a set of constraints which overlap - case 1"""
+        self.createModule("""
+        {
+            "classa":{
+                    "a1":1,
+                "__constraints__":{
+                        "a1":{
+                            "min":0
+                            }
+                        }
+                    },
+            "classb":{
+                "__parent__":"classa",
+                "a1":2,
+                "__constraints__":{
+                        "a1":{
+                            "max":5
+                            }
+                        }
+                    }
+        }""")
+
+        insta = self.tm.classa()
+        instb = self.tm.classb()
+
+        # The constraints on class b - the should apply
+        with self.assertRaises(ValueError):
+            instb.a1 = 6
+
+    def test_110_021_superclass_constraints_subclass_constraints_overlap(
+            self):
+        """Test that superclass constraints are maintained when the subclass has a set of constraints which overlap - case 2"""
+        self.createModule("""
+        {
+            "classa":{
+                    "a1":1,
+                "__constraints__":{
+                        "a1":{
+                            "min":0
+                            }
+                        }
+                    },
+            "classb":{
+                "__parent__":"classa",
+                "a1":2,
+                "__constraints__":{
+                        "a1": {
+                            "min":-5
+                            }
+                        }
+                    }
+        }""")
+        insta = self.tm.classa()
+        instb = self.tm.classb()
+        # The min constraints on class b is present on super & sub classes
+        # They both should be applied
+        with self.assertRaises(ValueError):
+            instb.a1 = -1
+
+    def test_110_030_inheritance_constraints_overlaping(self):
+        """Test that superclass constraints are maintained when the subclass has a set of constraints which overlap - case 2"""
+        self.createModule("""
+        {
+            "classa":{
+                    "a1":1,
+                "__constraints__":{
+                        "a1":{
+                            "min":-5,
+                            "max":5
+                            }
+                        }
+                    },
+            "classb":{
+                "__parent__":"classa",
+                "a1":2,
+                "__constraints__":{
+                        "a1":{
+                            "min":-2,
+                            "max":2
+                            }
+                        }
+                    }
+        }""")
+
+        instb = self.tm.classb()
+
+        # Classa constraints are applied first - and then class b
+        with self.assertRaises(ValueError):
+            instb.a1 = -3
+
+        with self.assertRaises(ValueError):
+            instb.a1 = 3
 
 # noinspection PyUnusedLocal
 def load_install_tests(loader, tests=None, pattern=None):
@@ -1198,7 +1407,6 @@ def load_install_tests(loader, tests=None, pattern=None):
         tests = loader.loadTestsFromTestCase(test_class)
         suite.addTests(tests)
     return suite
-
 
 # noinspection PyUnusedLocal
 def load_remaining_tests(loader, tests=None, pattern=None):
@@ -1214,7 +1422,8 @@ def load_remaining_tests(loader, tests=None, pattern=None):
         ClassAttributesExplicit,
         ClassInheritanceExplicit,
         ClassInheritanceImplicit,
-        ClassAttrConstraint
+        ClassAttrConstraint,
+        ClassAttrConflictingConstratints
     ]
 
     suite = unittest.TestSuite()
@@ -1223,16 +1432,16 @@ def load_remaining_tests(loader, tests=None, pattern=None):
         suite.addTests(tests)
     return suite
 
-
 if __name__ == '__main__':
+
     ldr = unittest.TestLoader()
 
     Installtest_suite = load_install_tests(ldr)
     test_suite = load_remaining_tests(ldr)
 
-    print "Installation of sys.meta_path hook"
+    print("Installation of sys.meta_path hook")
     result = unittest.TextTestRunner(verbosity=1).run(Installtest_suite)
     assert isinstance(result, unittest.TestResult)
     if len(result.errors) + len(result.failures) == 0:
-        print "Functionality tests - tests loader is correct, and the imported json creates a valid module"
+        print("Functionality tests - tests loader is correct, and the imported json creates a valid module")
         unittest.TextTestRunner(verbosity=1).run(test_suite)

@@ -22,9 +22,9 @@ The importjson library also allows you to set constraints on your instance attri
 .. toctree::
     :maxdepth: 2
 
+    Installation
     GettingStarted
     Constraints
-    Installation
     Specification
     ExtraInfo
 
