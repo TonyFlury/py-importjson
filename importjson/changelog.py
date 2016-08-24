@@ -2,7 +2,7 @@
 __change_log__ = """
 -------------
                                 Change Log
- Version 0.1.rc1 (22 Aug 2016)
+ Version 0.1.0 (22 Aug 2016) - Released
         Issue 18: Resolved Inheritance of constraints
 
  Version 0.0.1a9 (22 Aug 2016)
