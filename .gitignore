@@ -1,0 +1,11 @@
+.tox/*
+.idea/*
+build/*
+dist/*
+docs/_build/*
+docs/_static/*
+docs/_templates/*
+examples/*
+htmlcov/*
+importjson.egg-info/*
+sandbox/*
