@@ -2,9 +2,9 @@
 """
 # importjson : Test Suite for test_importjson
 
-Summary : 
+Summary :
     <summary of module/class being tested>
-Use Case : 
+Use Case :
     As a <actor> I want <outcome> So that <justification>
 
 Testable Statements :
@@ -23,10 +23,13 @@ from TempDirectoryContext import TempDirectoryContext as TestDirCont
 from random import sample
 from string import ascii_lowercase
 
+import imp
 import importlib
 import importjson
 
 import unittest
+
+import six
 
 __version__ = "0.1"
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
@@ -35,14 +38,18 @@ __created__ = '16 Oct 2015'
 _installation_failed = False
 _imports_failed = False
 
+
 def set_module_flag(name, val):
     sys.modules[__name__].setattr(name, val)
+
 
 def get_module_flag(name):
     return sys.modules[__name__].getattr(name)
 
+
 def cmp_version(x, y):
-    return -1 if StVers(x) < StVers(y) else (+1 if StVers(x) > StVers(y) else 0)
+    return (-1 if StVers(x) < StVers(y)
+            else (+1 if StVers(x) > StVers(y) else 0))
 
 
 class Installation(unittest.TestCase):
@@ -55,15 +62,15 @@ class Installation(unittest.TestCase):
 
     def test_000_001_HookAppend(self):
         """Confirm that the Hook is correctly appended"""
-        self.assertEqual(isinstance(sys.meta_path[-1], importjson.importjson.JSONLoader), True)
+        self.assertEqual(isinstance(sys.meta_path[-1],
+                                    importjson.importjson.JSONLoader), True)
 
     def test_000_002_Version(self):
         """Confirm correct version - expecting 0.0.1a1 or better"""
-        self.assertTrue(cmp_version(importjson.version.__version__, "0.0.1a1") > 0)
+        self.assertTrue(cmp_version(importjson.version.__version__,
+                                    "0.1.0") >= 0)
 
     @unittest.skip("skipped")
-    #@unittest.skipIf(cmp_version(importjson.version.__version__, "0.0.1a5") < 0,
-    #                 "Only gives exception on v0.0.1a5 or higher")
     def test_000_010_configurationObsolete(self):
         """Test obsolete config item - will only be tested when v0.01a5"""
         with self.assertRaises(ValueError) as cm:
@@ -107,10 +114,11 @@ class ModuleContentTest(object):
         return name
 
     def createModule(self, json_str, perm_error=False):
-        """Generate a json file in a random file in a random directory - and then import it
+        """Create a json file in a random file in a random directory & import
 
             :param json_str : The json to write to the file
-            :param perm_error : A boolean - whether there is to be an perm_error in this module - i.e. wrong permissions
+            :param perm_error : A boolean - whether there is to be an
+                            perm_error in this module - i.e. wrong permissions
         """
         with TestDirCont() as tempd:
             sys.path.append(tempd)
@@ -125,7 +133,7 @@ class ModuleContentTest(object):
         self.tm = importlib.import_module(self.mod_name)
 
 
-class ModuleData(ModuleContentTest,unittest.TestCase):
+class ModuleData(ModuleContentTest, unittest.TestCase):
     """Test Module level data, __loader__, __file__ etc"""
     def setUp(self):
         super(ModuleData, self).setUp()
@@ -151,15 +159,6 @@ class ModuleData(ModuleContentTest,unittest.TestCase):
 }""")
         self.assertEqual(self.tm.__file__, self.path)
 
-    def test_010_002_BasicModulePackage(self):
-        """Import module and check module package flag"""
-
-        self.createModule("""
-{
-    "test_value":0
-}""")
-        self.assertTrue(self.tm.__package__ is None)
-
     def test_010_003_BasicModuleSysmodule(self):
         """Import module and check module exists in sys.modules"""
 
@@ -178,18 +177,6 @@ class ModuleData(ModuleContentTest,unittest.TestCase):
 }""")
         self.assertTrue(isinstance(self.tm.__loader__, importjson.JSONLoader))
 
-    def test_010_005_BasicModuleGetSource(self):
-        """Import module and check get_source call"""
-
-        self.createModule("""
-{
-    "__doc__":"",
-    "test_value":0
-
-}""")
-        self.assertEqual(self.tm.__loader__.get_source(self.mod_name),
-                         '""""""\n\ntest_value = 0\n')
-
     def test_010_005_BasicModuleLoaderIsPackage(self):
         """Import module and check loader is_package method"""
 
@@ -197,7 +184,7 @@ class ModuleData(ModuleContentTest,unittest.TestCase):
 {
     "test_value":0
 }""")
-        self.assertTrue(self.tm.__package__ is None)
+        self.assertEqual(self.tm.__package__, '')
         self.assertFalse(self.tm.__loader__.is_package(self.mod_name))
 
     def test_010_006_BasicModuleGet_code(self):
@@ -216,7 +203,7 @@ class ModuleData(ModuleContentTest,unittest.TestCase):
         m1, p1, n1 = self.tm, self.path, self.mod_name
         with open(self.path, "w") as fp:
             fp.write('{ "a":1 }')
-        reload(m1)
+        imp.reload(m1)
         self.assertEqual(sys.modules[n1], m1)
         self.assertEqual(sys.modules[n1].__name__, n1)
         self.assertEqual(sys.modules[n1].__file__, p1)
@@ -227,13 +214,15 @@ class ModuleData(ModuleContentTest,unittest.TestCase):
         m1, p1, n1 = self.tm, self.path, self.mod_name
         with open(self.path, "w") as fp:
             fp.write('{ "a":1 }')
-        newm = m1.__loader__.load_module(n1)  # Load directly - rather than calling reload
+
+        # Load directly - rather than calling reload
+        newm = m1.__loader__.load_module(n1)
         self.assertEqual(sys.modules[n1], newm)
         self.assertEqual(newm.__name__, n1)
         self.assertEqual(newm.__file__, p1)
 
 
-class ModuleDataErrors(ModuleContentTest,unittest.TestCase):
+class ModuleDataErrors(ModuleContentTest, unittest.TestCase):
     """Check for module data under error conditions"""
     def setUp(self):
         super(ModuleDataErrors, self).setUp()
@@ -242,28 +231,29 @@ class ModuleDataErrors(ModuleContentTest,unittest.TestCase):
         super(ModuleDataErrors, self).tearDown()
 
     def test_015_000_is_packageUnknownModule(self):
-        """Test that loader.is_package fails to find module not previously loaded"""
+        """Test that loader.is_package fails if module not previously loaded"""
         self.createModule("{}")
         with self.assertRaises(ImportError):
             self.tm.__loader__.is_package(self._random_name())
 
     def test_015_001_get_codeUnknownModule(self):
-        """Test that loader.get_code fails to find module not previously loaded"""
+        """Test that loader.get_code fails if module not previously loaded"""
         self.createModule("{}")
         with self.assertRaises(ImportError):
             self.tm.__loader__.get_code(self._random_name())
 
     def test_015_002_get_sourceUnknownModule(self):
-        """Test that loader.get_source fails to find module not previously loaded"""
+        """Test that loader.get_source fails if module not previously loaded"""
         self.createModule("{}")
         with self.assertRaises(ImportError):
             self.tm.__loader__.get_source(self._random_name())
 
-    def test_010_053_ValidJsonDirectLoad(self):
+    def test_015_053_ValidJsonDirectLoad(self):
         """Test module load_module works correctly"""
         self.createModule("{}")
+        # Load directly - rather than calling reload
         with self.assertRaises(ImportError):
-            self.tm.__loader__.load_module(self._random_name())  # Load directly - rather than calling reload
+            self.tm.__loader__.load_module(self._random_name())
 
     def test_015_050_InvalidJSonEmpty(self):
         """Test that empty file is not able to be imported"""
@@ -286,7 +276,7 @@ class ModuleDataErrors(ModuleContentTest,unittest.TestCase):
             self.createModule("{}", perm_error=True)
 
 
-class ModuleAttributes(ModuleContentTest,unittest.TestCase):
+class ModuleAttributes(ModuleContentTest, unittest.TestCase):
     """Test simple imports of JSON files with module level attributes"""
     def setUp(self):
         super(ModuleAttributes, self).setUp()
@@ -339,11 +329,12 @@ class ModuleAttributes(ModuleContentTest,unittest.TestCase):
         self.assertDictEqual(self.tm.test_value, {"key1": 0, "key2": 1})
 
     def test_016_014_SimpleJsonWithList(self):
-        """Import module with single Dict Module Data Attribute - with a sub list"""
+        """Import module with Dict Module Data Attribute - with sub list"""
 
-        # Test included to check correct interpretation of all type and elements within the dict
-
-        # must have __classes__ to ensure correct interpretation
+        # Test included to prove correct recursive interpretation of all types
+        #  and elements within the dict
+        # Note : must have __classes__ to ensure correct interpretation
+        # Without __classes__ the `test_value` would be built as a class
         self.createModule("""
 {
     "test_value":{"key1":0, "key2":[]},
@@ -359,7 +350,6 @@ class ModuleAttributes(ModuleContentTest,unittest.TestCase):
     "test_value1":1,
     "test_value2":2
 }""")
-
         self.assertIs(sys.modules[self.mod_name], self.tm)
         self.assertEqual(self.tm.test_value1, 1)
         self.assertEqual(self.tm.test_value2, 2)
@@ -379,12 +369,13 @@ class ModuleAttributes(ModuleContentTest,unittest.TestCase):
 }""")
 
         self.assertIs(sys.modules[self.mod_name], self.tm)
-        self.assertTrue(isinstance(self.tm.__doc__, basestring))
+        self.assertTrue(isinstance(self.tm.__doc__, six.string_types))
 
         # Class name changes on version 0.0.1a2
         self.assertTrue(self.tm.__doc__.startswith(self.docstring_content()))
 
-        self.assertTrue("Original json data : {}".format(self.tm.__file__) in self.tm.__doc__)
+        self.assertTrue("Original json data : {}".format(self.tm.__file__)
+                        in self.tm.__doc__)
 
     def test_016_031_OverrideDocumentationString(self):
         """Test the Overrider of the Documentation String"""
@@ -394,8 +385,9 @@ class ModuleAttributes(ModuleContentTest,unittest.TestCase):
     "test_value":0
 }""")
         self.assertIs(sys.modules[self.mod_name], self.tm)
-        self.assertTrue(isinstance(self.tm.__doc__, basestring))
-        self.assertEqual(self.tm.__doc__, "Override documentation string")
+        self.assertTrue(isinstance(self.tm.__doc__, six.string_types))
+        self.assertEqual(self.tm.__doc__.strip(),
+                         "Override documentation string")
 
 
 class SingleAttrClass(ModuleContentTest):
@@ -423,11 +415,12 @@ class SingleAttrClass(ModuleContentTest):
 
         self.assertTrue("classa" in dir(self.tm))
         self.assertTrue(inspect.isclass(self.tm.classa))
+        a = self.tm.classa()
         self.assertTrue(inspect.isdatadescriptor(self.tm.classa.attr))
-        self.assertTrue(inspect.ismethod(self.tm.classa.__init__))
+        self.assertTrue(inspect.ismethod(a.__init__))
 
     def test_020_001_SimpleClassInstantiatedDefaults(self):
-        """Import simple single class - check the instance has the right defaults"""
+        """Import simple single class - test for correct defaults"""
         self.standard_case()
 
         self.assertTrue(inspect.isclass(self.tm.classa))
@@ -462,7 +455,7 @@ class SingleAttrClass(ModuleContentTest):
         self.assertEqual(inst.attr, "Hello")
 
 
-class SingAttrClassExplicit(SingleAttrClass,unittest.TestCase):
+class SingAttrClassExplicit(SingleAttrClass, unittest.TestCase):
     """Test explicitly defined classes cases"""
     def setUp(self):
         pass
@@ -498,47 +491,55 @@ class SingAttrClassExplicit(SingleAttrClass,unittest.TestCase):
         self.assertIs(sys.modules[self.mod_name], self.tm)
 
     def test_020_010_ClassJsonIsList(self):
-        """Extra case for explicit format only - check that a class definition which is a list is rejected"""
+        """Extra case for explicit format only
+            check that a class definition which is a list is rejected"""
         with self.assertRaises(ImportError):
             self.error_class_def(alt_type=list)
 
     def test_020_011_ClassJsonIsStr(self):
-        """Extra case for explicit format only - check that a class definition which is a str is rejected"""
+        """Extra case for explicit format only
+            check that a class definition which is a str is rejected"""
         with self.assertRaises(ImportError):
             self.error_class_def(alt_type=str)
 
     def test_020_012_ClassJsonIsInt(self):
-        """Extra case for explicit format only - check that a class definition which is a int is rejected"""
+        """Extra case for explicit format only
+            check that a class definition which is a int is rejected"""
         with self.assertRaises(ImportError):
             self.error_class_def(alt_type=int)
 
     def test_020_013_ClassJsonIsFloat(self):
-        """Extra case for explicit format only - check that a class definition which is a float is rejected"""
+        """Extra case for explicit format only
+            check that a class definition which is a float is rejected"""
         with self.assertRaises(ImportError):
             self.error_class_def(alt_type=float)
 
     def test_020_030_ClassesJsonIsList(self):
-        """Extra case for explicit format only - check that a classes definition which is a list is rejected"""
+        """Extra case for explicit format only
+            check that a classes definition which is a list is rejected"""
         with self.assertRaises(ImportError):
             self.error_classes_json(alt_type=list)
 
     def test_020_021_ClassesJsonIsStr(self):
-        """Extra case for explicit format only - check that a classes definition which is a str is rejected"""
+        """Extra case for explicit format only
+            check that a classes definition which is a str is rejected"""
         with self.assertRaises(ImportError):
             self.error_classes_json(alt_type=str)
 
     def test_020_022_ClassesJsonIsInt(self):
-        """Extra case for explicit format only - check that a classes definition which is a int is rejected"""
+        """Extra case for explicit format only
+            check that a classes definition which is a int is rejected"""
         with self.assertRaises(ImportError):
             self.error_classes_json(alt_type=int)
 
     def test_020_023_ClassesJsonIsFloat(self):
-        """Extra case for explicit format only - check that a classes definition which is a float is rejected"""
+        """Extra case for explicit format only
+            check that a classes definition which is a float is rejected"""
         with self.assertRaises(ImportError):
             self.error_classes_json(alt_type=float)
 
 
-class SingleAttrClassImplicit(SingleAttrClass,unittest.TestCase):
+class SingleAttrClassImplicit(SingleAttrClass, unittest.TestCase):
     """Test implicit classes defined in the JSON
         all top level directories are classes"""
     def setUp(self):
@@ -572,7 +573,8 @@ class MultipleAttrClass(ModuleContentTest):
         del sys.modules[self.tm.__name__]
 
     def test_030_000_ClassTwoAttributes(self):
-        """Import simple multiple attr class - check the instance has the right defaults"""
+        """Import simple multiple attr class
+           check the instance has the right defaults"""
         self.assertTrue(inspect.isclass(self.tm.classa))
         inst = self.tm.classa()
         self.assertTrue(inst.__class__ is self.tm.classa)
@@ -608,7 +610,7 @@ class MultipleAttrClass(ModuleContentTest):
         self.assertEqual(inst.attr2, "Goodbye")
 
 
-class MultipleAttrClassExplicit(MultipleAttrClass,unittest.TestCase):
+class MultipleAttrClassExplicit(MultipleAttrClass, unittest.TestCase):
     def setUp(self):
         self.createModule("""
 {
@@ -621,7 +623,7 @@ class MultipleAttrClassExplicit(MultipleAttrClass,unittest.TestCase):
 }""")
 
 
-class MultipleAttrClassImplicit(MultipleAttrClass,unittest.TestCase):
+class MultipleAttrClassImplicit(MultipleAttrClass, unittest.TestCase):
     def setUp(self):
         self.createModule("""
 {
@@ -682,22 +684,22 @@ class ClassAttributes(ModuleContentTest):
         self.assertEqual(self.tm.classa.__doc__, "Hello Doc string")
 
     def test_040_011_ClassAttributesListNotDict(self):
-        """ Test that if class Attribute section is a list- then Import fails"""
+        """ Test that if class Attribute section is a list"""
         with self.assertRaises(ImportError):
             self.class_attr_not_dict(alt_type=list)
 
     def test_040_012_ClassAttributesIntNotDict(self):
-        """ Test that if class Attribute section is a int - then Import fails"""
+        """ Test that if class Attribute section is a int"""
         with self.assertRaises(ImportError):
             self.class_attr_not_dict(alt_type=int)
 
     def test_040_013_ClassAttributeFloatNotDict(self):
-        """ Test that if class Attribute section is a float - then Import fails"""
+        """ Test that if class Attribute section is a float"""
         with self.assertRaises(ImportError):
             self.class_attr_not_dict(alt_type=float)
 
     def test_040_014_ClassAttributesStrNotDict(self):
-        """ Test that if class Attribute section is a str - then Import fails"""
+        """ Test that if class Attribute section is a str"""
         with self.assertRaises(ImportError):
             self.class_attr_not_dict(alt_type=str)
 
@@ -712,14 +714,14 @@ class ClassAttributes(ModuleContentTest):
         self.assertTrue(inspect.isclass(self.tm.classa))
 
     def test_040_022_ClassAttributesOnly(self):
-        """ Test that if class has no attributes - but has other contents (not class attributes)"""
+        """Test that if class only has class ttributes"""
         self.class_attributes_only()
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertEqual(self.tm.classa.attr1, 1)
         self.assertEqual(self.tm.classa.attr2, 2)
 
 
-class ClassAttributesExplicit(ClassAttributes,unittest.TestCase):
+class ClassAttributesExplicit(ClassAttributes, unittest.TestCase):
     """Test class creation with class attributes, using explicit syntax"""
 
     def normalclass(self):
@@ -798,7 +800,7 @@ class ClassAttributesExplicit(ClassAttributes,unittest.TestCase):
             }""")
 
 
-class ClassAttributesImplicit(ClassAttributes,unittest.TestCase):
+class ClassAttributesImplicit(ClassAttributes, unittest.TestCase):
     """Test class creation with class attributes, using implicit syntax"""
 
     def normalclass(self):
@@ -874,7 +876,8 @@ class ClassInheritance(ModuleContentTest):
         del sys.modules[self.tm.__name__]
 
     def test_050_000_ClassInheritanceNoOverrideAttr(self):
-        """Import two classes - with inheritance between them - no attributes over-ridden"""
+        """Import two classes - with inheritance between them
+           Test confirms that  no attributes over-ridden"""
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertTrue(inspect.isclass(self.tm.classb))
         self.assertTrue(issubclass(self.tm.classb, self.tm.classa))
@@ -885,7 +888,9 @@ class ClassInheritance(ModuleContentTest):
         self.assertEqual((instb.b1, instb.b2), (3, 4))
 
     def test_050_001_ClassInheritanceOverrideAttr(self):
-        """Import two classes - with inheritance between them - sub class overrides parent class attrs - test for solution of Issue 8"""
+        """Import two classes - with inheritance between them
+           sub class overrides parent class attrs
+           test for solution of Issue 8"""
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertTrue(inspect.isclass(self.tm.classb))
         self.assertTrue(issubclass(self.tm.classb, self.tm.classa))
@@ -895,7 +900,7 @@ class ClassInheritance(ModuleContentTest):
         self.assertEqual((insta.y, instb.y), (2, 4))
 
 
-class ClassInheritanceExplicit(ClassInheritance,unittest.TestCase):
+class ClassInheritanceExplicit(ClassInheritance, unittest.TestCase):
     def setUp(self):
         self.createModule("""
             {
@@ -926,7 +931,7 @@ class ClassInheritanceExplicit(ClassInheritance,unittest.TestCase):
             }""")
 
 
-class ClassInheritanceImplicit(ClassInheritance,unittest.TestCase):
+class ClassInheritanceImplicit(ClassInheritance, unittest.TestCase):
     def setUp(self):
         self.createModule("""
             {
@@ -955,7 +960,7 @@ class ClassInheritanceImplicit(ClassInheritance,unittest.TestCase):
             }""")
 
 
-class ClassAttrConstraint(ModuleContentTest,unittest.TestCase):
+class ClassAttrConstraint(ModuleContentTest, unittest.TestCase):
     """Test the constraints model - only tested with implicit classes"""
     def setUp(self):
         self.tm, self.mod_name = None, None
@@ -1097,6 +1102,8 @@ class ClassAttrConstraint(ModuleContentTest,unittest.TestCase):
                     }
             }""")
 
+#        print(self.tm.__loader__.get_source(self.mod_name))
+
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
         self.assertEqual(insta.a1, "a")
@@ -1137,19 +1144,19 @@ class ClassAttrConstraint(ModuleContentTest,unittest.TestCase):
 
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
-        self.assertAlmostEquals(insta.a1, 1.2)
+        self.assertAlmostEqual(insta.a1, 1.2)
 
         with self.assertRaises(TypeError):
             insta.a1 = "a"
-        self.assertAlmostEquals(insta.a1, 1.2)
+        self.assertAlmostEqual(insta.a1, 1.2)
 
         with self.assertRaises(TypeError):
             insta.a1 = {}
-        self.assertAlmostEquals(insta.a1, 1.2)
+        self.assertAlmostEqual(insta.a1, 1.2)
 
         with self.assertRaises(TypeError):
             insta.a1 = []
-        self.assertAlmostEquals(insta.a1, 1.2)
+        self.assertAlmostEqual(insta.a1, 1.2)
 
         insta.a1 = False
         self.assertEqual(insta.a1, 0)
@@ -1253,7 +1260,7 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
         self.tm, self.mod_name = None, None
 
     def test_110_010_superclass_constraintsonly(self):
-        """Test that superclass constraints are maintained when the subclass doesn't have any constraints defined"""
+        """Test that superclass constraints are honoured"""
         self.createModule("""
         {
             "classa":{
@@ -1269,7 +1276,6 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
                     "a1":2
                     }
         }""")
-        insta = self.tm.classa()
         instb = self.tm.classb()
 
         # With no constraints on classb - classa constraints should apply
@@ -1277,7 +1283,7 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
             instb.a1 = -1
 
     def test_110_015_superclass_constraints_subclass_empty(self):
-        """Test that superclass constraints are maintained when the subclass has a blank set of constraints defined"""
+        """Super class constraints when the subclass constraints are empty"""
         self.createModule("""
         {
             "classa":{
@@ -1294,16 +1300,14 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
                 "__constraints__":{}
                     }
         }""")
-        insta = self.tm.classa()
         instb = self.tm.classb()
 
         # With no constraints on classb - classa constraints should apply
         with self.assertRaises(ValueError):
             instb.a1 = -1
 
-
     def test_110_020_superclass_constraints_subclass_constraints_overlap(self):
-        """Test that superclass constraints are maintained when the subclass has a set of constraints which overlap - case 1"""
+        """Parent constraints are kept when the subclass overlaps - case 1"""
         self.createModule("""
         {
             "classa":{
@@ -1325,7 +1329,6 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
                     }
         }""")
 
-        insta = self.tm.classa()
         instb = self.tm.classb()
 
         # The constraints on class b - the should apply
@@ -1334,7 +1337,7 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
 
     def test_110_021_superclass_constraints_subclass_constraints_overlap(
             self):
-        """Test that superclass constraints are maintained when the subclass has a set of constraints which overlap - case 2"""
+        """Parent constraints are kept when the subclass overlaps - case 2"""
         self.createModule("""
         {
             "classa":{
@@ -1355,7 +1358,7 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
                         }
                     }
         }""")
-        insta = self.tm.classa()
+
         instb = self.tm.classb()
         # The min constraints on class b is present on super & sub classes
         # They both should be applied
@@ -1363,7 +1366,7 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
             instb.a1 = -1
 
     def test_110_030_inheritance_constraints_overlaping(self):
-        """Test that superclass constraints are maintained when the subclass has a set of constraints which overlap - case 2"""
+        """Parent constraints are kept when the subclass overlaps - case 3"""
         self.createModule("""
         {
             "classa":{
@@ -1396,6 +1399,7 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
         with self.assertRaises(ValueError):
             instb.a1 = 3
 
+
 # noinspection PyUnusedLocal
 def load_install_tests(loader, tests=None, pattern=None):
     test_classes = [
@@ -1407,6 +1411,7 @@ def load_install_tests(loader, tests=None, pattern=None):
         tests = loader.loadTestsFromTestCase(test_class)
         suite.addTests(tests)
     return suite
+
 
 # noinspection PyUnusedLocal
 def load_remaining_tests(loader, tests=None, pattern=None):
@@ -1443,5 +1448,6 @@ if __name__ == '__main__':
     result = unittest.TextTestRunner(verbosity=1).run(Installtest_suite)
     assert isinstance(result, unittest.TestResult)
     if len(result.errors) + len(result.failures) == 0:
-        print("Functionality tests - tests loader is correct, and the imported json creates a valid module")
+        print("Functionality tests - tests loader is correct, "
+              "and the imported json creates a valid module")
         unittest.TextTestRunner(verbosity=1).run(test_suite)

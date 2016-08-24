@@ -1,4 +1,6 @@
 # coding=utf-8
+""" Change Log for importjson package """
+
 __change_log__ = """
 -------------
                                 Change Log

@@ -28,12 +28,9 @@ from collections import OrderedDict
 import datetime
 import time
 import copy
-import version
-import changelog
+from .version import __version__
 import traceback as tr
-
-__version__ = version.__version__
-__changes__ = changelog.__change_log__
+import six
 
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '11 Oct 2015'
@@ -117,6 +114,7 @@ class JSONLoader(object):
             ca += "    {} = {}\n".format(name, value)
         return ca
 
+    # noinspection PyMethodMayBeStatic
     def _get_constraints(self, class_cons, attr_name):
         """Extract the constraints for a given attribute"""
 
@@ -134,6 +132,7 @@ class JSONLoader(object):
         else:
             return dict()
 
+    # noinspection PyMethodMayBeStatic
     def _generate_property_setter_getter(self, mod_name,
                                          cls_name,
                                          attr_name,
@@ -148,7 +147,8 @@ class JSONLoader(object):
         src = """
     @property
     def {attr_name}(self):
-        \"\"\"set/get {attr_name} attribute - allows for <{mod_name}.{cls_name}>.{attr_name} = <value>\"\"\"
+        \"\"\"get {attr_name} attribute
+              allows for <{mod_name}.{cls_name}>.{attr_name} syntax\"\"\"
         return self._{attr_name}
 
         """.format(attr_name=attr_name, mod_name=mod_name, cls_name=cls_name)
@@ -157,13 +157,17 @@ class JSONLoader(object):
         src += """
     @{attr_name}.setter
     def {attr_name}( self, value ):
-        \"\"\"Generate the setter and getter methods for the attribute\"\"\"
-        """.format(attr_name=attr_name)
+        \"\"\"set {attr_name} attribute
+              allows for <{mod_name}.{cls_name}>.{attr_name} = <value> syntax
+              Constraints are applied as appropriate
+        \"\"\"
+        """.format(attr_name=attr_name, mod_name=mod_name, cls_name=cls_name)
 
         if constraints.get('read_only', False):
             src += """
+        # Generate Read Only exception
         raise ValueError("{cls_name}.{attr_name} is read only")
-            """.format(cls_name=cls_name,attr_name=attr_name)
+            """.format(cls_name=cls_name, attr_name=attr_name)
         else:
             src += """
         self._{attr_name} = self._constrain_{attr_name}(value)
@@ -173,10 +177,9 @@ class JSONLoader(object):
         src += """
     def _constrain_{attr_name}( self, value ):
         \"\"\"Apply Constraints to the value for the attribute\"\"\"
-        """.format(attr_name=attr_name,cls_name=cls_name)
+        """.format(attr_name=attr_name, cls_name=cls_name)
 
-
-        src+= """
+        src += """
         if hasattr(super({cls_name},self), "_constrain_{attr_name}"):
             value = super({cls_name},self)._constrain_{attr_name}(value)
         """.format(cls_name=cls_name,
@@ -203,12 +206,12 @@ class JSONLoader(object):
             else:
                 # Create the appropriate argument for type check
                 allowed_type = {"bool": "(bool,int)",
-                                "str": "(str,unicode)",
+                                "str": "six.string_types",
                                 "list": "list",
                                 "int": "int",
                                 "float": "(float,int)",
                                 "dict": "dict"}[constraints["type"]]
-            #Create the code for the type check
+            # Create the code for the type check
             src += """
         if not isinstance(value, {allowed_type} ):
             raise TypeError(" Type Error : Attribute '{attr_name}' "
@@ -249,7 +252,8 @@ class JSONLoader(object):
         if {min_val} <= value:
             return value
         else:
-            raise ValueError("Range Error : '{attr_name}' must be >= {min_val}")
+            raise ValueError("Range Error : '{attr_name}' "
+                             "must be >= {min_val}")
                 """.format(attr_name=attr_name,
                            min_val=constraints["min"])
 
@@ -259,7 +263,8 @@ class JSONLoader(object):
         if {max_val} >= value:
             return value
         else:
-            raise ValueError("Range Error : '{attr_name}' must be <= {max_val}")
+            raise ValueError("Range Error : '{attr_name}' "
+                             "must be <= {max_val}")
                 """.format(attr_name=attr_name,
                            max_val=constraints["max"])
 
@@ -301,7 +306,7 @@ class JSONLoader(object):
                )
 
         # Issue 8 : Super is called first to initialise parent class
-        mc +="""
+        mc += """
         super({cls_name}, self).__init__(*args, **kwargs)
         """.format(cls_name=cls_name)
 
@@ -436,21 +441,27 @@ class JSONLoader(object):
         mod_code = ""
 
         if "__doc__" in json_dict:
-            mod_code += '"""{}"""\n\n'.format(
-                json_dict["__doc__"].encode("utf-8"))
+            mod_code += """
+\"\"\"{}\"\"\"
+""".format(json_dict["__doc__"])
         else:
-            mod_code += (
-                        '\"\"\"Module {name} - Created by {loader} v{vers} \n'
-                        '   Original json data : {json_file}\n'
-                        '   Generated {date} {timez}\"\"\"\n'.format(
-                                name=mod_name,
-                                loader=self.__class__.__name__,
-                                vers=__version__,
-                                json_file=JSONLoader._found_modules[mod_name],
-                                date=format(datetime.datetime.now().strftime(
-                                        "%a %d %b %Y %H:%M:%S")),
-                                timez=time.strftime("%Z (UTC %z)")
-                                ))
+            mod_code += """
+\"\"\"Module {name} - Created by {loader} v{vers} \n'
+   Original json data : {json_file}\n'
+   Generated {date} {timez}
+\"\"\"
+            """.format(name=mod_name,
+                       loader=self.__class__.__name__,
+                       vers=__version__,
+                       json_file=JSONLoader._found_modules[mod_name],
+                       date=format(datetime.datetime.now().strftime(
+                                    "%a %d %b %Y %H:%M:%S")),
+                       timez=time.strftime("%Z (UTC %z)"))
+
+        mod_code += """
+import six
+
+        """
 
         # Do we have Explicit or implicit classes
         implicit = "__classes__" not in json_dict
@@ -479,11 +490,13 @@ class JSONLoader(object):
                         raise ImportError("Unable to Import : "
                                           "classes must be defined "
                                           "as json dictionaries {}".format(
-                                          JSONLoader._found_modules[mod_name]))
+                                          JSONLoader.
+                                                _found_modules[mod_name]))
                 else:
                     # Everything else is treated as a module level attribute
-                    mod_code += "{} = {}\n".format(key, self.dictrepr(
-                        json_dict[key]))
+                    mod_code += """
+{} = {}
+""".format(key, self.recursive_repr(json_dict[key]))
             else:
                 if isinstance(json_dict[key], dict):
                     mod_code += self._create_class(cls_name=key,
@@ -492,22 +505,25 @@ class JSONLoader(object):
                                                    cls_list=cls_list)
                 else:
                     # Everything else is treated as a module level attribute
-                    mod_code += "{} = {}\n".format(key, self.dictrepr(
-                        json_dict[key]))
+                    mod_code += """
+{} = {}
+""".format(key, self.recursive_repr(json_dict[key]))
 
         return mod_code
 
-    def dictrepr(self, value):
-        """Recursively generate a repr string for a dict"""
-        if isinstance(value, (str, unicode, int, float)):
+    def recursive_repr(self, value):
+        """Generate a recursive repr for nested and complex data items"""
+
+        if not (isinstance(value, dict) or isinstance(value, list)):
             return repr(value)
 
         if isinstance(value, dict):
             return "{" + ",".join(
-                "{}:{}".format(self.dictrepr(k), self.dictrepr(v))
+                "{}:{}".format(self.recursive_repr(k), self.recursive_repr(v))
                 for k, v in value.items()) + "}"
+
         if isinstance(value, list):
-            return "[" + ",".join(self.dictrepr(v) for v in value) + "]"
+            return "[" + ",".join(self.recursive_repr(v) for v in value) + "]"
 
     def load_module(self, fullname):
         """Load the module - using the json file already found"""
@@ -526,19 +542,20 @@ class JSONLoader(object):
 
         mod.__file__ = JSONLoader._found_modules[fullname]
         mod.__loader__ = self
-        mod.__package__ = None
+        mod.__package__ = ''
         sys.modules[fullname] = mod
 
         # noinspection PyUnusedLocal
         try:
             mod_code = self.get_source(mod.__name__)
 
-            exec(mod_code, mod.__dict__ ) # Compile the code into the modules
+            # noinspection PyCompatibility
+            exec(mod_code, mod.__dict__)  # Compile the code into the modules
 
         except BaseException:
             del sys.modules[fullname]
             raise ImportError("Error Importing {}"
-                              ": {}".format(fullname,  tr.format_exc()))
+                              ": {}".format(fullname, tr.format_exc()))
 
         return mod
 
