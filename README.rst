@@ -1,4 +1,4 @@
-.. image:: https://travis-ci.org/TonyFlury/py-importjson
+.. image:: https://travis-ci.org/TonyFlury/py-importjson.png?branch=master
     :target: http://travis-ci.org/TonyFlury/py-importjson
 
 =======================================================
