@@ -1,0 +1,3 @@
+importjson
+six>=1.10
+TemporaryDirectoryContext>=0.0.5
