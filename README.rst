@@ -1,3 +1,6 @@
+.. image:: https://travis-ci.org/TonyFlury/py-importjson
+    :target: http://travis-ci.org/TonyFlury/py-importjson
+
 =======================================================
 importjson : Import json data into a python application
 =======================================================
