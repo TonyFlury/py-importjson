@@ -569,6 +569,12 @@ class MultipleAttrClass(ModuleContentTest):
                 "attr1":1,
                 "attr2":2,
                 "__repr__":"{class_name}: {attr1}, {attr2}"
+                 },
+        "classc":{
+                "attr1":1,
+                "attr2":2,
+                "__repr__":"{class_name}: {attr1}, {attr2}",
+                "__str__":"{attr1: <18} {attr2: >18}"
                 }
     }
 }""")
@@ -623,11 +629,31 @@ class MultipleAttrClass(ModuleContentTest):
 
 
     def test_030_015_override_repr(self):
-        """Test Defatult repr"""
+        """Test overidden repr"""
         inst = self.tm.classb(attr1 = 'Hello', attr2='Goodbye')
 
         self.assertEqual(repr(inst),
                          'classb: Hello, Goodbye')
+
+    def test_030_016_default_str(self):
+        """Test by default the str is the repr for a given instance"""
+        insta = self.tm.classa(attr1 = 'Hello', attr2='Goodbye')
+        self.assertEqual(str(insta), repr(insta))
+        instb = self.tm.classb(attr1 = 'Hello', attr2='Goodbye')
+        self.assertEqual(str(instb), repr(instb))
+
+
+    def test_030_020_override_str(self):
+        """Test that the str method is overridden for classc only"""
+#        print(self.tm.__loader__.get_source(self.tm.__name__))
+        insta = self.tm.classa(attr1 = 'Hello', attr2='Goodbye')
+        self.assertEqual(str(insta), repr(insta))
+        instb = self.tm.classb(attr1 = 'Hello', attr2='Goodbye')
+        self.assertEqual(str(instb), repr(instb))
+
+        instc = self.tm.classc(attr1='Hello',attr2='Goodbye')
+        self.assertEqual(repr(instc), 'classc(attr1=\'Hello\', attr2=\'Goodbye\')')
+        self.assertEqual(str(instc), 'Hello************* ***********Goodbye')
 
 class MultipleAttrClassExplicit(MultipleAttrClass, unittest.TestCase):
     def setUp(self):
@@ -642,8 +668,13 @@ class MultipleAttrClassExplicit(MultipleAttrClass, unittest.TestCase):
                 "attr1":1,
                 "attr2":2,
                 "__repr__":"{class_name}: {attr1}, {attr2}"
-            }
-    }
+                },
+        "classc":{
+                "attr1":1,
+                "attr2":2,
+                "__str__":"{attr1:*<18} {attr2:*>18}"
+                }
+        }
 }""")
 
 
@@ -659,7 +690,12 @@ class MultipleAttrClassImplicit(unittest.TestCase,MultipleAttrClass ):
             "attr1":1,
             "attr2":2,
             "__repr__":"{class_name}: {attr1}, {attr2}"
-            }
+            },
+    "classc":{
+            "attr1":1,
+            "attr2":2,
+            "__str__":"{attr1:*<18} {attr2:*>18}"
+            } 
 }""")
 
 

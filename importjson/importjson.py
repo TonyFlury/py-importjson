@@ -130,12 +130,23 @@ class JSONLoader(object):
         else:
             return dict()
 
-    def _generate_repr(self,mod_name, cls_name, attributes, repr_str):
 
+    def _get_default_repr(self, attributes):
+        """Create the default repr for this class"""
+        repr_fmt = '{class_name}('
+        repr_fmt += ', '.join(['{name}={{{name}!r}}'.format(name=attr_name) for attr_name in attributes])
+        repr_fmt += ')'
+        return repr_fmt
+
+    def _generate_str_format_method(self, mod_name, cls_name, attributes, format_str, method_name='repr'):
+        """Generate the code for the __repr__ method"""
         src= """
-    def __repr__(self):
-        return \'{repr_str}\'.format(class_name=\'{cls_name}\', {attrs})
-        """.format(repr_str=repr_str,cls_name=cls_name, attrs=', '.join(['{name}=self.{name}'.format(name=name) for name in attributes]))
+    def __{method_name}__(self):
+        \"\"\"{doc}\"\"\"
+        return \'{format_str}\'.format(class_name=\'{cls_name}\', module_name=\'{mod_name}\', {attrs})
+        """.format( method_name=method_name,
+                    doc = 'Generate repr for instance' if method_name=='__repr__' else 'Generate str for instance',
+                    format_str=format_str, mod_name=mod_name, cls_name=cls_name, attrs=', '.join(['{name}=self.{name}'.format(name=name) for name in attributes]))
         return src
 
     # noinspection PyMethodMayBeStatic
@@ -284,7 +295,7 @@ class JSONLoader(object):
     def _methods(self, cls_dict, mod_name, cls_name, cls_list):
         """Create all the instance methods (__init__ __repr__, and properties)"""
         mc = ""
-        ignore = ["__doc__", "__class_attributes__", "__constraints__",'__repr__']
+        ignore = ["__doc__", "__class_attributes__", "__constraints__",'__repr__','__str__']
 
         # Essentially unreachable - this argument will only be a dictionary
         # See how it is invoked from _create_class
@@ -345,16 +356,16 @@ class JSONLoader(object):
 
         repr_str = cls_dict.get('__repr__', self._get_default_repr(attributes=attributes))
 
-        mc += self._generate_repr(mod_name=mod_name, cls_name=cls_name, attributes=attributes, repr_str=repr_str)
+        str_str = cls_dict.get('__str__', None)
+
+
+        mc += self._generate_str_format_method(mod_name=mod_name, cls_name=cls_name, attributes=attributes, format_str=repr_str)
+
+        if str_str:
+            mc += self._generate_str_format_method(mod_name=mod_name, cls_name=cls_name, attributes=attributes, format_str=str_str, method_name='str')
 
         return mc
 
-    def _get_default_repr(self, attributes):
-        """Create the default repr for this class"""
-        repr_fmt = '{class_name}('
-        repr_fmt += ', '.join(['{name}={{{name}!r}}'.format(name=attr_name) for attr_name in attributes])
-        repr_fmt += ')'
-        return repr_fmt
 
     def _create_class(self, cls_name, cls_dict, mod_name, cls_list):
         """ Create a class definition for the given class"""
