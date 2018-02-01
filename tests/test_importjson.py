@@ -64,8 +64,7 @@ class Installation(unittest.TestCase):
 
     def test_000_001_HookAppend(self):
         """Confirm that the Hook is correctly appended"""
-        self.assertEqual(isinstance(sys.meta_path[-1],
-                                    importjson.importjson.JSONLoader), True)
+        self.assertTrue( any(isinstance(x, importjson.JSONLoader) for x in sys.meta_path))
 
     def test_000_002_Version(self):
         """Confirm correct version - expecting 0.0.1a1 or better"""

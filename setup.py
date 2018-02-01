@@ -28,7 +28,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=importjson.version.__version__,
+    version=importjson.version.__release__,
 
     description='Import a json file as a fully functional module '
                 'with classes, inheritance, attributes, properties '
