@@ -1,5 +1,6 @@
 .tox/**
 .idea/**
+.eggs/**
 build/**
 dist/**
 docs/_build/**
