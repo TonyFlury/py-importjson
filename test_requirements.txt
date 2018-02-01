@@ -1,3 +1,4 @@
 importjson
 six>=1.10
 TempDirectoryContext>=0.0.5a0
+click

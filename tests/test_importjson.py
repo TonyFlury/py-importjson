@@ -30,6 +30,8 @@ import importjson
 import unittest
 
 import six
+import click
+import re
 
 __version__ = "0.1"
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
@@ -617,7 +619,6 @@ class MultipleAttrClass(ModuleContentTest):
     def test_030_010_repr(self):
         """Test Defatult repr"""
         inst = self.tm.classa(attr1 = 'Hello', attr2='Goodbye')
-
         self.assertEqual(repr(inst),
                          'classa(attr1=\'Hello\', attr2=\'Goodbye\')')
 
@@ -1438,6 +1439,8 @@ def load_install_tests(loader, tests=None, pattern=None):
     suite = unittest.TestSuite()
     for test_class in test_classes:
         tests = loader.loadTestsFromTestCase(test_class)
+        if pattern:
+            tests = [test for test in tests if re.search(pattern, test.id())]
         suite.addTests(tests)
     return suite
 
@@ -1463,20 +1466,32 @@ def load_remaining_tests(loader, tests=None, pattern=None):
     suite = unittest.TestSuite()
     for test_class in test_classes:
         tests = loader.loadTestsFromTestCase(test_class)
+        if pattern:
+            tests = [test for test in tests if re.search(pattern, test.id())]
         suite.addTests(tests)
     return suite
 
-if __name__ == '__main__':
+@click.command()
+@click.option('-v', '--verbose', default=2, help='Level of output', count=True)
+@click.argument('pattern', nargs=1, required=False, type=str)
+def main( verbose, pattern ):
+    """Execute the unit test cases where the test id includes the pattern
 
+    [PATTERN] can be regular expressions (using the re syntax) or a simple string
+    """
     ldr = unittest.TestLoader()
 
-    Installtest_suite = load_install_tests(ldr)
-    test_suite = load_remaining_tests(ldr)
+    Installtest_suite = load_install_tests(ldr, pattern=pattern)
+    test_suite = load_remaining_tests(ldr, pattern=pattern)
 
     print("Installation of sys.meta_path hook")
-    result = unittest.TextTestRunner(verbosity=1).run(Installtest_suite)
+    result = unittest.TextTestRunner(verbosity=verbose).run(Installtest_suite)
     assert isinstance(result, unittest.TestResult)
     if len(result.errors) + len(result.failures) == 0:
         print("Functionality tests - tests loader is correct, "
               "and the imported json creates a valid module")
-        unittest.TextTestRunner(verbosity=1).run(test_suite)
+        unittest.TextTestRunner(verbosity=verbose).run(test_suite)
+
+if __name__ == '__main__':
+
+    main()

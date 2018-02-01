@@ -294,7 +294,7 @@ class JSONLoader(object):
                 "instance attributes for {} class".format(
                     cls_name))
 
-        attributes = {name:value for name, value in cls_dict.items() if name not in ignore}
+        attributes = OrderedDict([(name,value) for name, value in cls_dict.items() if name not in ignore])
 
         # Build the __init__ argument list - and detect mutable arguments
         al = [
