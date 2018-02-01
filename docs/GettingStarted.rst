@@ -18,6 +18,7 @@ By default ``importjson`` creates the module according to some simple rules (see
   - a name of ``__parent__`` can be used to define that the class is subclassed from another class within the json file.
   - a name of ``__class_attributes__`` can be used to define class data attributes (rather than instance attributes). name/value pairs in the ``__class_attributes__`` dictionary are converted to class data attributes with the appropriate name and starting value.
   - a name of ``__constraints__`` can be used to define type, range and other constraints for the instance data attributes (See :doc:`Constraints` for details on how to specify constraints)
+  - a name of ''__repr__'' can be used to define a customised repr format, and the name of ''__str__'' can be used to define a default str format - see :ref:`repr & str format` for more details.
 - within a class dictionary - any name/value pairs where the value is a dictionary is defined as instance data variable with a default value of a dictionary.
 
 You can define multiple classes per json file.
@@ -141,7 +142,6 @@ Creating Instances
 ^^^^^^^^^^^^^^^^^^
 There is nothing special about these classes, instances of these classes can be created in just the same way as other classes.
 
-
 Instances which are created from these classes have the expected Instance data attributes with default values derived from the relevant entries in the json. Instance Data Attributes can be retrieved by name (as expected).
 
 .. code-block:: python
@@ -186,4 +186,5 @@ Instance Data attributes are implemented as data descriptors, and so attributes 
 
   - Detailed Specification of the JSON format : :doc:`Specification`
   - Type and range checking of Instance Data Attributes : :doc:`Constraints`
+  - Customised repr and str formatting : :ref:`repr & str format`
   - Known Issues and Gotchas : :ref:`Shortcomings`

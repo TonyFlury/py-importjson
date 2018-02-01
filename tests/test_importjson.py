@@ -563,6 +563,11 @@ class MultipleAttrClass(ModuleContentTest):
         "classa":{
                 "attr1":1,
                 "attr2":2
+                },
+        "classb":{
+                "attr1":1,
+                "attr2":2,
+                "__repr__":"{class_name}: {attr1}, {attr2}"
                 }
     }
 }""")
@@ -609,6 +614,20 @@ class MultipleAttrClass(ModuleContentTest):
         self.assertEqual(inst.attr1, "Hello")
         self.assertEqual(inst.attr2, "Goodbye")
 
+    def test_030_010_repr(self):
+        """Test Defatult repr"""
+        inst = self.tm.classa(attr1 = 'Hello', attr2='Goodbye')
+
+        self.assertEqual(repr(inst),
+                         'classa(attr1=\'Hello\', attr2=\'Goodbye\')')
+
+
+    def test_030_015_override_repr(self):
+        """Test Defatult repr"""
+        inst = self.tm.classb(attr1 = 'Hello', attr2='Goodbye')
+
+        self.assertEqual(repr(inst),
+                         'classb: Hello, Goodbye')
 
 class MultipleAttrClassExplicit(MultipleAttrClass, unittest.TestCase):
     def setUp(self):
@@ -618,18 +637,28 @@ class MultipleAttrClassExplicit(MultipleAttrClass, unittest.TestCase):
         "classa":{
                 "attr1":1,
                 "attr2":2
-                }
+                },
+        "classb":{
+                "attr1":1,
+                "attr2":2,
+                "__repr__":"{class_name}: {attr1}, {attr2}"
+            }
     }
 }""")
 
 
-class MultipleAttrClassImplicit(MultipleAttrClass, unittest.TestCase):
+class MultipleAttrClassImplicit(unittest.TestCase,MultipleAttrClass ):
     def setUp(self):
         self.createModule("""
 {
     "classa":{
             "attr1":1,
             "attr2":2
+            },
+    "classb":{
+            "attr1":1,
+            "attr2":2,
+            "__repr__":"{class_name}: {attr1}, {attr2}"
             }
 }""")
 
@@ -714,7 +743,7 @@ class ClassAttributes(ModuleContentTest):
         self.assertTrue(inspect.isclass(self.tm.classa))
 
     def test_040_022_ClassAttributesOnly(self):
-        """Test that if class only has class ttributes"""
+        """Test that if class only has class attributes"""
         self.class_attributes_only()
         self.assertTrue(inspect.isclass(self.tm.classa))
         self.assertEqual(self.tm.classa.attr1, 1)

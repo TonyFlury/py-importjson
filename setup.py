@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-import importjson.version
+import importjson
 
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '15 Oct 2015'

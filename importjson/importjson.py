@@ -28,12 +28,10 @@ from collections import OrderedDict
 import datetime
 import time
 import copy
-from .version import __version__
+from .version import __version__, __author__, __copyright__, __email__, __release__
 import traceback as tr
 import six
 
-__author__ = 'Tony Flury : anthony.flury@btinternet.com'
-__created__ = '11 Oct 2015'
 
 __configuration__ = {"JSONSuffixes": [".json"]}
 __obsolete__ = {"AllDictionariesAsClasses":
@@ -131,6 +129,14 @@ class JSONLoader(object):
             return class_cons[attr_name]
         else:
             return dict()
+
+    def _generate_repr(self,mod_name, cls_name, attributes, repr_str):
+
+        src= """
+    def __repr__(self):
+        return \'{repr_str}\'.format(class_name=\'{cls_name}\', {attrs})
+        """.format(repr_str=repr_str,cls_name=cls_name, attrs=', '.join(['{name}=self.{name}'.format(name=name) for name in attributes]))
+        return src
 
     # noinspection PyMethodMayBeStatic
     def _generate_property_setter_getter(self, mod_name,
@@ -276,9 +282,9 @@ class JSONLoader(object):
 
     # noinspection PyMethodMayBeStatic
     def _methods(self, cls_dict, mod_name, cls_name, cls_list):
-        """Create all the instance methods (__init__ and properties)"""
+        """Create all the instance methods (__init__ __repr__, and properties)"""
         mc = ""
-        ignore = ["__doc__", "__class_attributes__", "__constraints__"]
+        ignore = ["__doc__", "__class_attributes__", "__constraints__",'__repr__']
 
         # Essentially unreachable - this argument will only be a dictionary
         # See how it is invoked from _create_class
@@ -288,11 +294,13 @@ class JSONLoader(object):
                 "instance attributes for {} class".format(
                     cls_name))
 
+        attributes = {name:value for name, value in cls_dict.items() if name not in ignore}
+
         # Build the __init__ argument list - and detect mutable arguments
         al = [
             "{}={}".format(var, repr(def_value) if not isinstance(def_value, (
                 list, dict)) else "None")
-            for var, def_value in cls_dict.items() if var not in ignore]
+            for var, def_value in attributes.items()]
 
         if not al:
             # mc += "    pass"
@@ -311,9 +319,7 @@ class JSONLoader(object):
         """.format(cls_name=cls_name)
 
         # Set the initial value of the attribute with constrains applied
-        for attr_name, def_value in cls_dict.items():
-            if attr_name in ignore:
-                continue
+        for attr_name, def_value in attributes.items():
 
             # Identify the appropriate value if default value is mutable
             if isinstance(def_value, (list, dict)):
@@ -326,19 +332,29 @@ class JSONLoader(object):
         self._{attr_name} = self._constrain_{attr_name}( {attr_name} )
             """.format(attr_name=attr_name)
 
-        for var in cls_dict:
-            if var in ignore:
-                continue
+        for attribute_name in attributes:
 
             cons = self._get_constraints(
                 class_cons=cls_dict.get("__constraints__", None),
-                attr_name=var)
+                attr_name=attribute_name)
             mc += self._generate_property_setter_getter(mod_name=mod_name,
                                                         cls_name=cls_name,
-                                                        attr_name=var,
+                                                        attr_name=attribute_name,
                                                         cls_list=cls_list,
                                                         constraints=cons)
+
+        repr_str = cls_dict.get('__repr__', self._get_default_repr(attributes=attributes))
+
+        mc += self._generate_repr(mod_name=mod_name, cls_name=cls_name, attributes=attributes, repr_str=repr_str)
+
         return mc
+
+    def _get_default_repr(self, attributes):
+        """Create the default repr for this class"""
+        repr_fmt = '{class_name}('
+        repr_fmt += ', '.join(['{name}={{{name}!r}}'.format(name=attr_name) for attr_name in attributes])
+        repr_fmt += ')'
+        return repr_fmt
 
     def _create_class(self, cls_name, cls_dict, mod_name, cls_list):
         """ Create a class definition for the given class"""
@@ -452,7 +468,7 @@ class JSONLoader(object):
 \"\"\"
             """.format(name=mod_name,
                        loader=self.__class__.__name__,
-                       vers=__version__,
+                       vers= __version__,
                        json_file=JSONLoader._found_modules[mod_name],
                        date=format(datetime.datetime.now().strftime(
                                     "%a %d %b %Y %H:%M:%S")),

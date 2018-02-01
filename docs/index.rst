@@ -26,7 +26,8 @@ The importjson library also allows you to set constraints on your instance attri
     GettingStarted
     Constraints
     Specification
+    ReprStrFormat
     ExtraInfo
 
 .. _Github Issues: https://github.com/TonyFlury/py-importjson/issues/new
-.. _Tony Flury : mailto:anthony.flury?Subject=ImportJson%20Error
+.. _Tony Flury : mailto:{{html_context.email}}?Subject=ImportJson%20Error
