@@ -391,7 +391,7 @@ class ModuleAttributes(ModuleContentTest, unittest.TestCase):
                          "Override documentation string")
 
 
-class SingleAttrClass(ModuleContentTest):
+class SingleAttrClass(ModuleContentTest, unittest.TestCase):
     """Define common set of tests for both implict and explicit JSON cases"""
     def setUp(self):
         pass
@@ -556,7 +556,7 @@ class SingleAttrClassImplicit(SingleAttrClass, unittest.TestCase):
         self.assertIs(sys.modules[self.mod_name], self.tm)
 
 
-class MultipleAttrClass(ModuleContentTest):
+class MultipleAttrClass(ModuleContentTest, unittest.TestCase):
     def setUp(self):
         self.createModule("""
 {
@@ -655,7 +655,7 @@ class MultipleAttrClass(ModuleContentTest):
         self.assertEqual(repr(instc), 'classc(attr1=\'Hello\', attr2=\'Goodbye\')')
         self.assertEqual(str(instc), 'Hello************* ***********Goodbye')
 
-class MultipleAttrClassExplicit(MultipleAttrClass, unittest.TestCase):
+class MultipleAttrClassExplicit(MultipleAttrClass):
     def setUp(self):
         self.createModule("""
 {
@@ -678,7 +678,7 @@ class MultipleAttrClassExplicit(MultipleAttrClass, unittest.TestCase):
 }""")
 
 
-class MultipleAttrClassImplicit(unittest.TestCase,MultipleAttrClass ):
+class MultipleAttrClassImplicit(MultipleAttrClass ):
     def setUp(self):
         self.createModule("""
 {
@@ -699,7 +699,7 @@ class MultipleAttrClassImplicit(unittest.TestCase,MultipleAttrClass ):
 }""")
 
 
-class ClassAttributes(ModuleContentTest):
+class ClassAttributes(ModuleContentTest, unittest.TestCase):
     """Common defined test cases for testing class level attributes"""
 
     def normalclass(self):
@@ -786,7 +786,7 @@ class ClassAttributes(ModuleContentTest):
         self.assertEqual(self.tm.classa.attr2, 2)
 
 
-class ClassAttributesExplicit(ClassAttributes, unittest.TestCase):
+class ClassAttributesExplicit(ClassAttributes):
     """Test class creation with class attributes, using explicit syntax"""
 
     def normalclass(self):
@@ -865,7 +865,7 @@ class ClassAttributesExplicit(ClassAttributes, unittest.TestCase):
             }""")
 
 
-class ClassAttributesImplicit(ClassAttributes, unittest.TestCase):
+class ClassAttributesImplicit(ClassAttributes):
     """Test class creation with class attributes, using implicit syntax"""
 
     def normalclass(self):
@@ -932,7 +932,7 @@ class ClassAttributesImplicit(ClassAttributes, unittest.TestCase):
             }""")
 
 
-class ClassInheritance(ModuleContentTest):
+class ClassInheritance(ModuleContentTest, unittest.TestCase):
     def setUp(self):
         self.tm, self.mod_name = None, None
 
@@ -965,7 +965,7 @@ class ClassInheritance(ModuleContentTest):
         self.assertEqual((insta.y, instb.y), (2, 4))
 
 
-class ClassInheritanceExplicit(ClassInheritance, unittest.TestCase):
+class ClassInheritanceExplicit(ClassInheritance):
     def setUp(self):
         self.createModule("""
             {
@@ -996,7 +996,7 @@ class ClassInheritanceExplicit(ClassInheritance, unittest.TestCase):
             }""")
 
 
-class ClassInheritanceImplicit(ClassInheritance, unittest.TestCase):
+class ClassInheritanceImplicit(ClassInheritance):
     def setUp(self):
         self.createModule("""
             {
@@ -1464,25 +1464,10 @@ class ClassAttrConflictingConstratints(ModuleContentTest, unittest.TestCase):
         with self.assertRaises(ValueError):
             instb.a1 = 3
 
-
 # noinspection PyUnusedLocal
-def load_install_tests(loader, tests=None, pattern=None):
+def load_tests(loader, tests=None, pattern=None):
     test_classes = [
         Installation,
-    ]
-
-    suite = unittest.TestSuite()
-    for test_class in test_classes:
-        tests = loader.loadTestsFromTestCase(test_class)
-        if pattern:
-            tests = [test for test in tests if re.search(pattern, test.id())]
-        suite.addTests(tests)
-    return suite
-
-
-# noinspection PyUnusedLocal
-def load_remaining_tests(loader, tests=None, pattern=None):
-    test_classes = [
         ModuleData,
         ModuleDataErrors,
         ModuleAttributes,
@@ -1516,16 +1501,8 @@ def main( verbose, pattern ):
     """
     ldr = unittest.TestLoader()
 
-    Installtest_suite = load_install_tests(ldr, pattern=pattern)
-    test_suite = load_remaining_tests(ldr, pattern=pattern)
-
-    print("Installation of sys.meta_path hook")
-    result = unittest.TextTestRunner(verbosity=verbose).run(Installtest_suite)
-    assert isinstance(result, unittest.TestResult)
-    if len(result.errors) + len(result.failures) == 0:
-        print("Functionality tests - tests loader is correct, "
-              "and the imported json creates a valid module")
-        unittest.TextTestRunner(verbosity=verbose).run(test_suite)
+    test_suite = load_tests(ldr, pattern=pattern)
+    unittest.TextTestRunner(verbosity=verbose).run(test_suite)
 
 if __name__ == '__main__':
 
