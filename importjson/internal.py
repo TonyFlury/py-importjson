@@ -17,7 +17,7 @@ import datetime
 import time
 import six
 
-import version
+from . import version
 
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '02 Feb 2018'
