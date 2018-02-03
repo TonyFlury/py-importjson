@@ -33,7 +33,8 @@ import six
 import click
 import re
 
-__version__ = "0.1"
+import importjson.version
+
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '16 Oct 2015'
 
@@ -132,7 +133,6 @@ class ModuleContentTest(object):
                 os.chmod(self.path, 0o200)
 
         self.tm = importlib.import_module(self.mod_name)
-
 
 class ModuleData(ModuleContentTest, unittest.TestCase):
     """Test Module level data, __loader__, __file__ etc"""
@@ -355,9 +355,58 @@ class ModuleAttributes(ModuleContentTest, unittest.TestCase):
         self.assertEqual(self.tm.test_value1, 1)
         self.assertEqual(self.tm.test_value2, 2)
 
+    def test_016_020_OneModuleAttributes_Introspection(self):
+        """Import module with two attributes"""
+        self.createModule("""
+{
+    "test_value1":1
+}""")
+        self.assertIs(sys.modules[self.mod_name], self.tm)
+        self.assertEqual(self.tm.test_value1, 1)
+        print(self.tm.__loader__.get_source(self.tm.__name__))
+        e = list(self.tm.get_attributes())
+        self.assertEqual(len(e), 1)
+        self.assertEqual(e[0].name, 'test_value1')
+        self.assertEqual(e[0].default, 1)
+
+    def test_016_025_TwoModuleAttributes_Introspection(self):
+        """Import module with two attributes"""
+        self.createModule("""
+{
+    "test_value1":1,
+    "test_value2":2
+}""")
+        self.assertIs(sys.modules[self.mod_name], self.tm)
+        self.assertEqual(self.tm.test_value1, 1)
+        self.assertEqual(self.tm.test_value2, 2)
+
+        e = list(self.tm.get_attributes())
+        self.assertEqual(len(e), 2)
+        self.assertEqual(e[0].name, 'test_value1')
+        self.assertEqual(e[0].default, 1)
+        self.assertEqual(e[1].name, 'test_value2')
+        self.assertEqual(e[1].default, 2)
+
+    def test_016_027_IntrospectionDefaultValues(self):
+        """Prove that Introspection always provides Default values and """
+        self.createModule("""
+{
+    "test_value1":1
+}""")
+        self.assertIs(sys.modules[self.mod_name], self.tm)
+        self.assertEqual(self.tm.test_value1, 1)
+
+        e = list(self.tm.get_attributes())
+        self.assertEqual(len(e), 1)
+        self.assertEqual(e[0].name, 'test_value1')
+        self.assertEqual(e[0].default, 1)
+        self.tm.test_value1 =3
+        e = list(self.tm.get_attributes())[0]
+        self.assertEqual(e.default, 1)
+
     def docstring_content(self):
         """Class name changed after 0.0.1a2"""
-        if cmp_version(importjson.importjson.__version__, "0.0.1a2") > 0:
+        if cmp_version(importjson.version.__version__, "0.0.1a2") > 0:
             return "Module {} - Created by JSONLoader".format(self.mod_name)
         else:
             return "Module {} - Created by JSONFinder".format(self.mod_name)
@@ -420,7 +469,34 @@ class SingleAttrClass(ModuleContentTest):
         self.assertTrue(inspect.isdatadescriptor(self.tm.classa.attr))
         self.assertTrue(inspect.ismethod(a.__init__))
 
-    def test_020_001_SimpleClassInstantiatedDefaults(self):
+    def test_020_010_SimpleClassInspection(self):
+        """confirm inspection by get_classes"""
+        self.standard_case()
+
+        self.assertTrue("classa" in dir(self.tm))
+        self.assertTrue(inspect.isclass(self.tm.classa))
+
+        c = list(self.tm.get_classes())
+
+        self.assertEqual(len(c), 1)
+        self.assertEqual(c[0].name, 'classa')
+        self.assertEqual(c[0].cls_, self.tm.classa)
+        self.assertEqual(c[0].parent_class, 'object')
+
+    def test_020_011_SimpleClassInstanceAttributeInspection(self):
+        """confirm inspection by get_instance_attributes"""
+        self.standard_case()
+
+        self.assertTrue("classa" in dir(self.tm))
+        self.assertTrue(inspect.isclass(self.tm.classa))
+
+        c = list(self.tm.classa.get_instance_attributes())
+
+        self.assertEqual(len(c), 1)
+        self.assertEqual(c[0].name, 'attr')
+        self.assertEqual(c[0].default, 1)
+
+    def test_020_012_SimpleClassInstantiatedDefaults(self):
         """Import simple single class - test for correct defaults"""
         self.standard_case()
 
@@ -429,7 +505,7 @@ class SingleAttrClass(ModuleContentTest):
         self.assertTrue(inst.__class__ is self.tm.classa)
         self.assertEqual(inst.attr, 1)
 
-    def test_020_002_SimpleClassInstantiatedKWord(self):
+    def test_020_013_SimpleClassInstantiatedKWord(self):
         """Import simple single attr class - keyword instantiation"""
         self.standard_case()
 
@@ -442,7 +518,7 @@ class SingleAttrClass(ModuleContentTest):
         self.assertTrue(inst.__class__ is self.tm.classa)
         self.assertEqual(inst.attr, "Hello")
 
-    def test_020_003_SimpleClassInstantiatedNoKeyword(self):
+    def test_020_014_SimpleClassInstantiatedNoKeyword(self):
         """Import simple single class - None key word instantiation"""
         self.standard_case()
 
@@ -456,7 +532,7 @@ class SingleAttrClass(ModuleContentTest):
         self.assertEqual(inst.attr, "Hello")
 
 
-class SingAttrClassExplicit(SingleAttrClass, unittest.TestCase):
+class SingleAttrClassExplicit(SingleAttrClass, unittest.TestCase):
     """Test explicitly defined classes cases"""
     def setUp(self):
         pass
@@ -562,19 +638,19 @@ class MultipleAttrClass(ModuleContentTest):
 {
     "__classes__":{
         "classa":{
-                "attr1":1,
-                "attr2":2
+                "attr1a":1,
+                "attr2a":2
                 },
         "classb":{
-                "attr1":1,
-                "attr2":2,
-                "__repr__":"{class_name}: {attr1}, {attr2}"
+                "attr1b":1,
+                "attr2b":2,
+                "__repr__":"{class_name}: {attr1b}, {attr2b}"
                  },
         "classc":{
-                "attr1":1,
-                "attr2":2,
-                "__repr__":"{class_name}: {attr1}, {attr2}",
-                "__str__":"{attr1: <18} {attr2: >18}"
+                "attr1c":1,
+                "attr2c":2,
+                "__repr__":"{class_name}: {attr1c}, {attr2c}",
+                "__str__":"{attr1c: <18} {attr2c: >18}"
                 }
     }
 }""")
@@ -590,22 +666,22 @@ class MultipleAttrClass(ModuleContentTest):
         self.assertTrue(inspect.isclass(self.tm.classa))
         inst = self.tm.classa()
         self.assertTrue(inst.__class__ is self.tm.classa)
-        self.assertEqual(inst.attr1, 1)
-        self.assertEqual(inst.attr2, 2)
+        self.assertEqual(inst.attr1a, 1)
+        self.assertEqual(inst.attr2a, 2)
 
     def test_030_001_SimpleClassInstantiatedKWord(self):
         """Import simple multiple attr class - keyword instantiation"""
 
         self.assertTrue(inspect.isclass(self.tm.classa))
-        inst = self.tm.classa(attr1=23, attr2=30)
+        inst = self.tm.classa(attr1a=23, attr2a=30)
         self.assertTrue(inst.__class__ is self.tm.classa)
-        self.assertEqual(inst.attr1, 23)
-        self.assertEqual(inst.attr2, 30)
+        self.assertEqual(inst.attr1a, 23)
+        self.assertEqual(inst.attr2a, 30)
 
-        inst = self.tm.classa(attr1="Hello", attr2="Goodbye")
+        inst = self.tm.classa(attr1a="Hello", attr2a="Goodbye")
         self.assertTrue(inst.__class__ is self.tm.classa)
-        self.assertEqual(inst.attr1, "Hello")
-        self.assertEqual(inst.attr2, "Goodbye")
+        self.assertEqual(inst.attr1a, "Hello")
+        self.assertEqual(inst.attr2a, "Goodbye")
 
     def test_030_002_SimpleClassInstantiatedNoKeyWord(self):
         """Import simple multiple attr class - none keyword instantiation"""
@@ -613,46 +689,56 @@ class MultipleAttrClass(ModuleContentTest):
         self.assertTrue(inspect.isclass(self.tm.classa))
         inst = self.tm.classa(23, 30)
         self.assertTrue(inst.__class__ is self.tm.classa)
-        self.assertEqual(inst.attr1, 23)
-        self.assertEqual(inst.attr2, 30)
+        self.assertEqual(inst.attr1a, 23)
+        self.assertEqual(inst.attr2a, 30)
 
         inst = self.tm.classa("Hello", "Goodbye")
         self.assertTrue(inst.__class__ is self.tm.classa)
-        self.assertEqual(inst.attr1, "Hello")
-        self.assertEqual(inst.attr2, "Goodbye")
+        self.assertEqual(inst.attr1a, "Hello")
+        self.assertEqual(inst.attr2a, "Goodbye")
 
-    def test_030_010_repr(self):
+    def test_030_010_MultipleClassInspection(self):
+        e = [(c.name, c.cls_) for c in self.tm.get_classes()]
+        self.assertEqual(e,[('classa',self.tm.classa),
+                            ('classb', self.tm.classb),
+                            ('classc',self.tm.classc)])
+
+    def test_030_010_MultipleInstanceAttributeInspection(self):
+        e = [(c.name, c.default) for c in self.tm.classa.get_instance_attributes()]
+        self.assertEqual(e,[('attr1a',1),
+                            ('attr2a', 2)])
+
+    def test_030_050_repr(self):
         """Test Defatult repr"""
-        inst = self.tm.classa(attr1 = 'Hello', attr2='Goodbye')
+        inst = self.tm.classa(attr1a = 'Hello', attr2a='Goodbye')
         self.assertEqual(repr(inst),
-                         'classa(attr1=\'Hello\', attr2=\'Goodbye\')')
+                         'classa(attr1a=\'Hello\', attr2a=\'Goodbye\')')
 
 
-    def test_030_015_override_repr(self):
+    def test_030_055_override_repr(self):
         """Test overidden repr"""
-        inst = self.tm.classb(attr1 = 'Hello', attr2='Goodbye')
+        inst = self.tm.classb(attr1b = 'Hello', attr2b='Goodbye')
 
         self.assertEqual(repr(inst),
                          'classb: Hello, Goodbye')
 
-    def test_030_016_default_str(self):
+    def test_030_056_default_str(self):
         """Test by default the str is the repr for a given instance"""
-        insta = self.tm.classa(attr1 = 'Hello', attr2='Goodbye')
+        insta = self.tm.classa(attr1c = 'Hello', attr2c='Goodbye')
         self.assertEqual(str(insta), repr(insta))
-        instb = self.tm.classb(attr1 = 'Hello', attr2='Goodbye')
+        instb = self.tm.classb(attr1c = 'Hello', attr2c='Goodbye')
         self.assertEqual(str(instb), repr(instb))
-
 
     def test_030_020_override_str(self):
         """Test that the str method is overridden for classc only"""
 #        print(self.tm.__loader__.get_source(self.tm.__name__))
-        insta = self.tm.classa(attr1 = 'Hello', attr2='Goodbye')
+        insta = self.tm.classa(attr1a = 'Hello', attr2a='Goodbye')
         self.assertEqual(str(insta), repr(insta))
-        instb = self.tm.classb(attr1 = 'Hello', attr2='Goodbye')
+        instb = self.tm.classb(attr1b = 'Hello', attr2b='Goodbye')
         self.assertEqual(str(instb), repr(instb))
 
-        instc = self.tm.classc(attr1='Hello',attr2='Goodbye')
-        self.assertEqual(repr(instc), 'classc(attr1=\'Hello\', attr2=\'Goodbye\')')
+        instc = self.tm.classc(attr1c='Hello',attr2c='Goodbye')
+        self.assertEqual(repr(instc), 'classc(attr1c=\'Hello\', attr2c=\'Goodbye\')')
         self.assertEqual(str(instc), 'Hello************* ***********Goodbye')
 
 class MultipleAttrClassExplicit(MultipleAttrClass, unittest.TestCase):
@@ -661,18 +747,18 @@ class MultipleAttrClassExplicit(MultipleAttrClass, unittest.TestCase):
 {
     "__classes__":{
         "classa":{
-                "attr1":1,
-                "attr2":2
+                "attr1a":1,
+                "attr2a":2
                 },
         "classb":{
-                "attr1":1,
-                "attr2":2,
-                "__repr__":"{class_name}: {attr1}, {attr2}"
+                "attr1b":1,
+                "attr2b":2,
+                "__repr__":"{class_name}: {attr1b}, {attr2b}"
                 },
         "classc":{
-                "attr1":1,
-                "attr2":2,
-                "__str__":"{attr1:*<18} {attr2:*>18}"
+                "attr1c":1,
+                "attr2c":2,
+                "__str__":"{attr1c:*<18} {attr2c:*>18}"
                 }
         }
 }""")
@@ -683,18 +769,18 @@ class MultipleAttrClassImplicit(unittest.TestCase,MultipleAttrClass ):
         self.createModule("""
 {
     "classa":{
-            "attr1":1,
-            "attr2":2
+            "attr1a":1,
+            "attr2a":2
             },
     "classb":{
-            "attr1":1,
-            "attr2":2,
-            "__repr__":"{class_name}: {attr1}, {attr2}"
+            "attr1b":1,
+            "attr2b":2,
+            "__repr__":"{class_name}: {attr1b}, {attr2b}"
             },
     "classc":{
-            "attr1":1,
-            "attr2":2,
-            "__str__":"{attr1:*<18} {attr2:*>18}"
+            "attr1c":1,
+            "attr2c":2,
+            "__str__":"{attr1c:*<18} {attr2c:*>18}"
             } 
 }""")
 
@@ -785,6 +871,18 @@ class ClassAttributes(ModuleContentTest):
         self.assertEqual(self.tm.classa.attr1, 1)
         self.assertEqual(self.tm.classa.attr2, 2)
 
+    def test_040_022_ClassAttributesInspection(self):
+        """Test that inspection of class attributes including reporting on defaults"""
+        self.class_attributes_only()
+        self.assertEqual(
+            [(a.name, a.default) for a in self.tm.classa.get_class_attributes()],
+            [('attr1',1),('attr2',2)]
+        )
+        self.tm.classa.attr1 = 14
+        self.assertEqual(
+            [(a.name, a.default) for a in self.tm.classa.get_class_attributes()],
+            [('attr1',1),('attr2',2)]
+        )
 
 class ClassAttributesExplicit(ClassAttributes, unittest.TestCase):
     """Test class creation with class attributes, using explicit syntax"""
@@ -1167,8 +1265,6 @@ class ClassAttrConstraint(ModuleContentTest, unittest.TestCase):
                     }
             }""")
 
-#        print(self.tm.__loader__.get_source(self.mod_name))
-
         self.assertTrue("classa" in dir(self.tm))
         insta = self.tm.classa()
         self.assertEqual(insta.a1, "a")
@@ -1486,7 +1582,7 @@ def load_remaining_tests(loader, tests=None, pattern=None):
         ModuleData,
         ModuleDataErrors,
         ModuleAttributes,
-        SingAttrClassExplicit,
+        SingleAttrClassExplicit,
         SingleAttrClassImplicit,
         MultipleAttrClassExplicit,
         MultipleAttrClassImplicit,

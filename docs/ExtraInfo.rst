@@ -30,7 +30,6 @@ Future
 Possible future enhancements :
 
  - Auto generation of factory methods, using a specific attribute as the key
- - Auto generation of human friendly **``__str__``** and **``__repr__``** functions
  - Documentation strings for the Instance Data Attributes
  - Keys in **``__constrains__``** section should be case insensitive
  - validity of **``__constrains_``** items should be performed at import time.

@@ -4,6 +4,12 @@
 __change_log__ = """
 -------------
                                 Change Log
+ Version 0.1.2 (2 Feb 2018) - In progress
+        Issue 21 : Expose meta-data
+        
+ Version 0.1.1 (1 Feb 2018) - Released
+        Issue 11: Useful default repr and Customiseable repr and str
+
  Version 0.1.0 (22 Aug 2016) - Released
         Issue 18: Resolved Inheritance of constraints
 

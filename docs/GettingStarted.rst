@@ -185,6 +185,7 @@ Instance Data attributes are implemented as data descriptors, and so attributes 
 .. seealso::
 
   - Detailed Specification of the JSON format : :doc:`Specification`
+  - Disovering what python classes and attributes have been imorted :doc:`Introspection`
   - Type and range checking of Instance Data Attributes : :doc:`Constraints`
   - Customised repr and str formatting : :ref:`repr & str format`
   - Known Issues and Gotchas : :ref:`Shortcomings`

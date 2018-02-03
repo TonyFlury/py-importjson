@@ -27,6 +27,7 @@ The importjson library also allows you to set constraints on your instance attri
     Constraints
     Specification
     ReprStrFormat
+    Introspection
     ExtraInfo
 
 .. _Github Issues: https://github.com/TonyFlury/py-importjson/issues/new
