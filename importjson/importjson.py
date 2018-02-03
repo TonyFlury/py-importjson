@@ -28,7 +28,7 @@ from collections import OrderedDict
 import copy
 from . import version
 
-from internal import Module
+from .internal import Module
 import traceback as tr
 import six
 
