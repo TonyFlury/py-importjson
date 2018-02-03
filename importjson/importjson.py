@@ -26,7 +26,7 @@ import imp
 import json
 from collections import OrderedDict
 import copy
-import version
+from . import version
 
 from internal import Module
 import traceback as tr

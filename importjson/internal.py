@@ -17,7 +17,7 @@ import datetime
 import time
 import six
 
-from version import __version__ as __version__
+import version
 
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '02 Feb 2018'
@@ -568,7 +568,7 @@ class Module():
 \"\"\"
             """.format(name=self._module_name,
                        loader=self._loader.__class__.__name__,
-                       vers=__version__,
+                       vers= version.__version__,
                        json_file=self._loader._found_modules[self._module_name],
                        date=format(datetime.datetime.now().strftime(
                            "%a %d %b %Y %H:%M:%S")),
