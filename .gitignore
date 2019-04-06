@@ -9,4 +9,3 @@ docs/_static/**
 docs/_templates/**
 htmlcov/**
 importjson.egg-info/**
-cacheinfo/**
