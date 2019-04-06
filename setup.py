@@ -46,7 +46,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='http://tonyflury.github.io/py-importjson/',
+    url='https://github.com/TonyFlury/py-importjson',
 
     # Author details
     author='Anthony Flury',
@@ -61,7 +61,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
 
         # Indicate who your project is intended for
         'Intended Audience :: Developers',
