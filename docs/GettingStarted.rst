@@ -40,7 +40,7 @@ Example Json
 
 Using the following json file as an example to illustrate the key features of the importjson library:
 
-Place the json file called ``classes.json`` exists in your applications current directory
+Place the json file called ``example.json`` exists in your applications current directory
 
 .. code-block:: json
 
@@ -63,28 +63,55 @@ Place the json file called ``classes.json`` exists in your applications current 
     pair: json; import
 
 Importing the JSON file
-^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------
+
+Given a valid json file (such as the above file), the importjson library can be used to import the json file
+and create a module including attributes, classes, and attributes on those classes.
+
+Using import command
+^^^^^^^^^^^^^^^^^^^^
 
 Importing this json file is easy :
 
 .. code-block:: python
 
-    >>> import importjson # Importjson library - must be imported before any json files
-    >>> import classes          # Will import classes.json
+    >>> import importjson       # Importjson library - must be imported before any json files
+    >>> import example          # Will import example.json
 
 If a classes.json is found the above import will try to read the JSON and convert it following the rules described above. It it fails (due to permisssions, or malformed JSON for instance), and ``ImportError`` exception will be raised.
 Assuming though that the above import works, with the JSON example above, then a python module is created, and can be used as any normal module:
 
+Using importlib library
+^^^^^^^^^^^^^^^^^^^^^^^
+
+A json 'module' can also be imported using the importlib mechanism :
+
+.. code-block:: python
+
+   >>> import importlib
+   >>> import importjson
+   >>> example = importlib.import_module('example')
+   >>> dir(example.Point)
+   ['ClassAttributeInfo', 'ClassInfo', 'InstanceAttributeInfo', 'ModuleAttributeInfo',
+   '__author__', '__builtins__', '__doc__', '__file__', '__json__', '__loader__',
+   '__name__', '__package__', '__version__', 'get_attributes', 'get_classes',
+   'namedtuple', 'point', 'six']
+
 .. index::
    triple: module; data; attributes
+
+Imported Module Content
+-----------------------
 
 Module Data Attributes
 ^^^^^^^^^^^^^^^^^^^^^^
 
+Using the json file above as an example, and importing it using either method, the imported module contains a number of attributes :
+
 .. code-block:: python
 
     >>> # Module attributes
-    >>> classes.__author__, classes.__version__
+    >>> example.__author__, example.__version__
     u'Tony', u'0.1'
 
 As per the json implementation in the python standard library, all strings are treated as unicode.
@@ -93,15 +120,18 @@ By default the module has a auto generated documentation string
 
 .. code-block:: python
 
-    >>> print classes.__doc__
+    >>> print example.__doc__
     Module classes - Created by JSONLoader
        Original json data : /home/tony/Development/python/importjson/src/classes.json
        Generated Mon 12 Oct 2015 22:30:54 BST (UTC +0100)
 
+
 .. code-block:: python
 
-    >>> dir(classes)
-    ['__builtins__', '__doc__', '__file__', '__json__', '__loader__', '__name__', '__package__', '__version__', '__author__','point']
+   >>> dir(example)
+   ['ClassAttributeInfo', 'ClassInfo', 'InstanceAttributeInfo', 'ModuleAttributeInfo',
+   '__author__', '__builtins__', '__doc__', '__file__', '__json__', '__loader__',
+   '__name__', '__package__', '__version__', 'get_attributes', 'get_classes', 'namedtuple', 'point', 'six']
 
 As can be seen from the ``dir`` listing above there are a number of special module variables :
 
@@ -112,6 +142,9 @@ As can be seen from the ``dir`` listing above there are a number of special modu
  - ``__loader__`` : This is the custom loader object (which the importjson library implements).
  - ``__name__`` : As with all other modules - this is the fully qualified module name.
  - ``__package__`` : This is False, as the json file cannot ever define a package
+ - ``ClassAttributeInfo``, ``ClassInfo``, ``InstanceAttributeInfo``, ``ModuleAttributeInfo`` are all :doc:`introspection` objects - these may not exist in future versions.
+ - ``get_attributes`` and ``get_classes`` : both functions related to :doc:`introspection`
+ - ``namedtuple``, ``six`` : The code produced by importjson currently depends on the amedtuple and six libraries: this may change in future versions.
 
 In the above output the ``__version__`` and ``__author__`` variables are not special variables - as they are defined by the json file.
 
@@ -121,18 +154,18 @@ In the above output the ``__version__`` and ``__author__`` variables are not spe
 Classes
 ^^^^^^^
 
-The ``point`` dictionary in the example json file will have been converted to the ``classes.point`` class.
+The ``point`` dictionary in the example json file will have been converted to the ``example.point`` class.
 
 The classes which are created have all the properties you might expect - for instance as defined by the ``__doc__`` and the ``__class__attributes__`` dictionary in  the json file we can define class data attributes (see :doc:`Specification` for details)
 
 
 .. code-block:: python
 
-    >>> classes.point._val1
+    >>> example.point._val1
     1
-    >>> classes.point._val2
+    >>> example.point._val2
     2
-    >>> classes.point.__doc__
+    >>> example.point.__doc__
     'Example class built from json'
 
 .. index::
@@ -146,7 +179,7 @@ Instances which are created from these classes have the expected Instance data a
 
 .. code-block:: python
 
-    >>> inst = classes.point()
+    >>> inst = example.point()
     >>> inst.x, inst.y, inst.colour
     0, 0, [0, 0, 0]
 
