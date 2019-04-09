@@ -1,0 +1,233 @@
+{# Generate the doc string for the module #}
+{% if module.has_doc_string %}
+"""{{ module.doc_string }}"""
+{% else %}
+"""Module {{module.name}} - Created by {{module.loader}} v{{module.loader_version}}
+   Original json data : {{module.json_file}}
+   Generated {{module.generated_date}} {{module.timez}}"""
+{% endif %}
+
+{# Generate the import list for the module #}
+{% for import_ in module.imports %}
+{{ import_ }}
+{% endfor %}
+
+{% for attr in module.attributes %}
+{{ attr.name }} = {{ attr.default }}
+{% endfor %}
+
+def get_classes():
+    """"Generator yielding information on classes within this module"""
+    ClassInfo = namedtuple('ClassInfo',['name','cls_', 'parent_class'])
+
+    {% if module.has_classes %}
+    classes = [
+    {% for cls in module.classes %}
+        ClassInfo(name='{{cls.name}}', cls_={{cls.name}}, parent_class='{{cls.base}}' ),
+    {% endfor %}
+    ]
+    {% else %}
+    classes = []
+    {% endif %}
+
+    for cls in classes:
+        yield cls
+
+def get_attributes():
+    """"Generator yielding information on module level attributes"""
+    ModuleAttributeInfo = namedtuple('ModuleAttributeInfo',['name','default'])
+
+{% if module.has_attributes %}
+    attrs = [
+    {% for attr in module.attributes %}
+        ModuleAttributeInfo(name='{{attr.name}}', default={{attr.default}} ),
+    {% endfor %}
+            ]
+{% else %}
+    attrs = []
+{% endif %}
+
+    for attr in attrs:
+        yield attr
+
+{% for cls in module.classes %}
+
+class {{cls.name}}({{cls.base}}):
+    {% if cls.doc_string %}
+    """{{cls.doc_string}}"""
+    {% endif %}
+
+    {% for attr in cls.class_attributes %}
+    {{attr.name}} = {{attr.default}}
+    {% endfor %}
+
+    {% if cls.has_instance_attributes %}
+    def __init__(self, {{cls.instance_attributes | join ', ' parameterised_default }}, *args, **kwargs):
+        {% if cls.doc_string %}
+        """{{cls.doc_string}}"""
+        {% endif %}
+
+        {# Call Super class if required #}
+        {% if cls.base != 'object' %}
+
+        super( {{cls.name}}, self).__init__(*args, **kwargs)
+
+        {% endif %}
+
+        {# Set initial values of all instances #}
+        {% for attr in cls.instance_attributes %}
+            {% if attr.mutable_default %}
+        {{attr.name}} = {{attr.default}} if {{attr.name}} is None else {{attr.default}}
+            {% endif %}
+
+        self._{{attr.name}} = self._constrain_{{attr.name}}( {{attr.name}} )
+        {% endfor %}
+
+        {# Generate, setter, getter and constraint methods #}
+        {% for attr in cls.instance_attributes %}
+
+    @property
+    def {{attr.name}}(self):
+        """get {{attr.name}}
+           allows for <{{module.name}}.{{cls.name}}>.{{attr.name}} syntax"""
+        return self._{{attr.name}}
+
+    @{{attr.name}}.setter
+    def {{attr.name}}( self, value ):
+        """set {{attr.name}} attribute
+                allows for <{{module.name}}.{{cls.name}}>.{{attr.name}} = <value> syntax
+                Constraints are applied as appropriate"""
+
+        {% if 'read_only' in attr.constraints and attr.constraints.read_only%}
+        raise ValueError("{{cls.name}}.{{attr.name}} is read only")
+        {% else %}
+
+        self._{{attr.name}} = self._constrain_{{attr.name}}(value)
+        {% endif %}
+
+
+    def _constrain_{{attr.name}}( self, value ):
+        """Apply constraints to the {{attr.name}} attribute"""
+
+        if hasattr(super({{cls.name}},self), "_constrain_{{attr.name}}"):
+            value = super({{cls.name}},self)._constrain_{{attr.name}}(value)
+
+        {# implement Not None constraint #}
+        {% if 'not_none' in attr.constraints and attr.constraints.not_none %}
+        # Check for none as it not allowed
+        if value is None:
+            raise ValueError('Range Error : \'{{attr.name}}\' cannot be None')
+
+        {% else %}
+        # Since value is None and None is allowed - can ignore all other checks
+        if value is None:
+            return None
+
+        {% endif %}
+
+        {# implement type constraint #}
+        {% if 'type' in attr.constraints %}
+
+        if not isinstance(value, {{attr.allowed_type}} ):
+            raise TypeError(" Type Error : Attribute '{{attr.name}}' "
+                                "must be of type {{attr.allowed_type}} : {type_name} given "
+                                "given".format(
+                                        type_name = type(value).__name__ ))
+
+        {% endif %}
+
+        if isinstance(value, (dict,list)):
+            return value
+
+        {% if ('min' in attr.constraints) and ('max' in attr.constraints) %}
+        if ({{attr.constraints.min}} <= value <= {{attr.constraints.max}}):
+            return value
+        else:
+             raise ValueError("Range Error : '{{attr.name}}' must be "
+                                  "between {{attr.constraints.min}} and {{attr.constraints.max}} : {} given".format( value))
+        {% endif %}
+
+        {% if ('min' in attr.constraints) and ('max' not in attr.constraints)%}
+        if ({{attr.constraints.min}} <= value):
+            return value
+        else:
+             raise ValueError("Range Error : '{{attr.name}}' must be "
+                                  ">= {{attr.constraints.min}}: {} given".format( value))
+        {% endif %}
+
+        {% if ('max' in attr.constraints) and ('min' not in attr.constraints)%}
+        if ({{attr.constraints.max}} >= value):
+            return value
+        else:
+             raise ValueError("Range Error : '{{attr.name}}' must be "
+                                  "<= {{attr.constraints.max}}: {} given".format( value) )
+        {% endif %}
+
+        return value
+
+
+        {% endfor %}
+
+        {% endif %} {# End of Instance Attribute check #}
+
+
+        {% if cls.dunder_repr_overriden %}
+
+    def __repr__(self):
+        """Generate repr for instance"""
+        return "{{cls.dunder_repr_format}}".format( class_name='{{cls.name}}',
+                                                   module_name='{{module.name}}',
+                                    {% for attr in cls.instance_attributes %}
+                                                   {{attr.name}}=self._{{attr.name}},
+                                    {% endfor %}  )
+
+        {% else %}
+
+    def __repr__(self):
+        """Generate repr for instance"""
+        return "{{cls.name}}({{ cls.instance_attributes | join ', ' default_repr_format }})".format(
+                        {% for attr in cls.instance_attributes %}{{attr.name}} = self._{{attr.name}}, {% endfor %} )
+
+        {% endif %}
+
+        {# Only generate str if neccessary #}
+        {% if cls.dunder_str_overriden %}
+
+    def __str__(self):
+        """Generate str for instance"""
+        return "{{cls.dunder_str_format}}".format( class_name='{{cls.name}}',
+                                                   module_name='{{module.name}}',
+                                    {% for attr in cls.instance_attributes %}
+                                                   {{attr.name}}=self._{{attr.name}},
+                                    {% endfor %}  )
+
+        {% endif %}
+
+
+    @classmethod
+    def get_class_attributes(cls_):
+        """Generator yielding information on class attributes"""
+        ClassAttributeInfo = namedtuple('ClassAttributeInfo',['name','default'])
+
+        attrs = [
+    {% for attr in cls.class_attributes %}
+        ClassAttributeInfo(name= '{{attr.name}}', default={{attr.default}} ),
+    {% endfor %}
+        ]
+        for attr in attrs:
+            yield attr
+
+    @classmethod
+    def get_instance_attributes(cls_):
+        """Generator yielding information on instance attributes"""
+        InstanceAttributeInfo = namedtuple('InstanceAttributeInfo',['name','default'])
+
+        attrs = [
+    {% for attr in cls.instance_attributes %}
+        InstanceAttributeInfo(name= '{{attr.name}}', default={{attr.default}} ),
+    {% endfor %}
+        ]
+        for attr in attrs:
+            yield attr
+
+{% endfor %} {# End of classes Loop #}

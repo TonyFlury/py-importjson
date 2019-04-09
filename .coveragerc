@@ -1,0 +1,7 @@
+[run]
+branch=True
+source=importjson
+
+[report]
+exclude_lines =
+    def __repr__

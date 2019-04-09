@@ -1,2 +1,2 @@
-importjson
 six>=1.10
+templatelite>=0.2.1
