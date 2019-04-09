@@ -1603,3 +1603,5 @@ def main( verbose, pattern ):
 if __name__ == '__main__':
 
     main()
+
+#TODO Test type constraint of a type defined in the same module

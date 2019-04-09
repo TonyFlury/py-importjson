@@ -11,10 +11,13 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-import importjson
 
 __author__ = 'Tony Flury : anthony.flury@btinternet.com'
 __created__ = '15 Oct 2015'
+
+import sys
+
+major, minor, micro = sys.version_info[:3]
 
 here = path.abspath(path.dirname(__file__))
 
@@ -22,15 +25,22 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-import sys
+#with open(path.join(here,'requirements.txt'),'r') as dev_req,\
+#    open(path.join(here, 'test_requirements.txt'), 'r') as test_req:
+#    ir = dev_req.readlines()
+#    tr = test_req.readlines()
 
-major, minor, micro = sys.version_info[:3]
-if major == 2:
-    ir = ['six',]
-    tr = [ 'six','click','TempDirectoryContext']
-if major == 3:
-    ir = ['six']
-    tr = ['six', 'click', 'TempDirectoryContext']
+ir = ['six>=1.10','templatelite>=0.2.1']
+tr = ['six>=1.10','templatelite>=0.2.1','click','TempDirectoryContext>=0.0.5a0']
+
+def extract_version_info( line):
+    return line.split('=')[-1].strip().strip('\'\"')
+
+with open(path.join(here, 'importjson/version.py'),'r') as version_fp:
+    version, release = None, None
+    for line in version_fp:
+        version = extract_version_info(line) if version is None and line.startswith('__version__') else version
+        release = extract_version_info(line) if release is None and line.startswith('__release__') else release
 
 setup(
     name='importjson',
@@ -38,7 +48,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=importjson.version.__release__,
+    version=version,
 
     description='Import a json file as a fully functional module '
                 'with classes, inheritance, attributes, properties '
@@ -103,8 +113,7 @@ setup(
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
-    package_data={
-    },
+    package_data={'importjson': ['templates/*.tmpl']},
 
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
