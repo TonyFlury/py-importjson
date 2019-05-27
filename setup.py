@@ -31,7 +31,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 #    tr = test_req.readlines()
 
 ir = ['six>=1.10','templatelite>=0.2.1']
-tr = ['six>=1.10','templatelite>=0.2.1','click','TempDirectoryContext>=0.0.5a0']
+tr = ['six>=1.10','templatelite>=0.2.1','click','TempDirectoryContext>=1.0.1']
 
 def extract_version_info( line):
     return line.split('=')[-1].strip().strip('\'\"')
